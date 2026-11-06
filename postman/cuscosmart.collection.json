@@ -1,0 +1,4943 @@
+{
+  "info": {
+    "name": "CuscoSmart IA API",
+    "description": "Pruebas automáticas de la API. Antes de ejecutarla: npm run db:reset y reinicia la API (npm run dev).",
+    "schema": "https://schema.getpostman.com/json/collection/v2.1.0/collection.json"
+  },
+  "event": [
+    {
+      "listen": "prerequest",
+      "script": {
+        "type": "text/javascript",
+        "exec": [
+          "if (!pm.collectionVariables.get('correoNuevo')) {",
+          "  pm.collectionVariables.set('correoNuevo', 'luis' + Date.now() + '@mail.com');",
+          "}"
+        ]
+      }
+    }
+  ],
+  "variable": [
+    {
+      "key": "baseUrl",
+      "value": "http://localhost:3000/api/v1"
+    },
+    {
+      "key": "tokenAdmin",
+      "value": ""
+    },
+    {
+      "key": "tokenAna",
+      "value": ""
+    },
+    {
+      "key": "tokenNuevo",
+      "value": ""
+    },
+    {
+      "key": "correoNuevo",
+      "value": ""
+    },
+    {
+      "key": "idNuevo",
+      "value": ""
+    },
+    {
+      "key": "idCategoria",
+      "value": ""
+    },
+    {
+      "key": "idZona",
+      "value": ""
+    },
+    {
+      "key": "idAtractivo",
+      "value": ""
+    },
+    {
+      "key": "idHorario",
+      "value": ""
+    },
+    {
+      "key": "idFoto",
+      "value": ""
+    },
+    {
+      "key": "favPlaza",
+      "value": ""
+    },
+    {
+      "key": "favQenqo",
+      "value": ""
+    },
+    {
+      "key": "favNuevo",
+      "value": ""
+    },
+    {
+      "key": "idIti",
+      "value": ""
+    },
+    {
+      "key": "idItiNuevo",
+      "value": ""
+    },
+    {
+      "key": "paradaPlaza",
+      "value": ""
+    },
+    {
+      "key": "paradaQenqo",
+      "value": ""
+    },
+    {
+      "key": "idPregunta",
+      "value": ""
+    }
+  ],
+  "item": [
+    {
+      "name": "00 Autenticación",
+      "description": "Genera los tokens de admin, Ana (turista) y un usuario nuevo.",
+      "item": [
+        {
+          "name": "GET /health",
+          "event": [
+            {
+              "listen": "test",
+              "script": {
+                "type": "text/javascript",
+                "exec": [
+                  "pm.test('Responde 200', () => pm.response.to.have.status(200));",
+                  "pm.test(\"Formato ok:true\", () => { pm.expect(pm.response.json().ok).to.eql(true); });",
+                  "pm.test(\"Base de datos arriba\", () => { pm.expect(pm.response.json().data.db).to.eql(\"up\"); });"
+                ]
+              }
+            }
+          ],
+          "request": {
+            "method": "GET",
+            "header": [],
+            "url": {
+              "raw": "{{baseUrl}}/health",
+              "host": [
+                "{{baseUrl}}"
+              ],
+              "path": [
+                "health"
+              ]
+            },
+            "auth": {
+              "type": "noauth"
+            }
+          }
+        },
+        {
+          "name": "Login admin",
+          "event": [
+            {
+              "listen": "test",
+              "script": {
+                "type": "text/javascript",
+                "exec": [
+                  "pm.test('Responde 200', () => pm.response.to.have.status(200));",
+                  "pm.test(\"Formato ok:true\", () => { pm.expect(pm.response.json().ok).to.eql(true); });",
+                  "pm.test(\"Guarda tokenAdmin\", () => { pm.collectionVariables.set('tokenAdmin', pm.response.json().data.token); });",
+                  "pm.test(\"Rol ADMIN\", () => { pm.expect(pm.response.json().data.usuario.rol).to.eql(\"ADMIN\"); });",
+                  "pm.test(\"No devuelve la contraseña\", () => { pm.expect('contrasena' in pm.response.json().data.usuario).to.eql(false); });"
+                ]
+              }
+            }
+          ],
+          "request": {
+            "method": "POST",
+            "header": [
+              {
+                "key": "Content-Type",
+                "value": "application/json"
+              }
+            ],
+            "url": {
+              "raw": "{{baseUrl}}/auth/login",
+              "host": [
+                "{{baseUrl}}"
+              ],
+              "path": [
+                "auth",
+                "login"
+              ]
+            },
+            "auth": {
+              "type": "noauth"
+            },
+            "body": {
+              "mode": "raw",
+              "raw": "{\n  \"correo\": \"admin@cuscosmart.pe\",\n  \"contrasena\": \"Admin12345\"\n}",
+              "options": {
+                "raw": {
+                  "language": "json"
+                }
+              }
+            }
+          }
+        },
+        {
+          "name": "Login Ana (correo en mayúsculas)",
+          "event": [
+            {
+              "listen": "test",
+              "script": {
+                "type": "text/javascript",
+                "exec": [
+                  "pm.test('Responde 200', () => pm.response.to.have.status(200));",
+                  "pm.test(\"Formato ok:true\", () => { pm.expect(pm.response.json().ok).to.eql(true); });",
+                  "pm.test(\"Guarda tokenAna\", () => { pm.collectionVariables.set('tokenAna', pm.response.json().data.token); });",
+                  "pm.test(\"Rol TURISTA\", () => { pm.expect(pm.response.json().data.usuario.rol).to.eql(\"TURISTA\"); });"
+                ]
+              }
+            }
+          ],
+          "request": {
+            "method": "POST",
+            "header": [
+              {
+                "key": "Content-Type",
+                "value": "application/json"
+              }
+            ],
+            "url": {
+              "raw": "{{baseUrl}}/auth/login",
+              "host": [
+                "{{baseUrl}}"
+              ],
+              "path": [
+                "auth",
+                "login"
+              ]
+            },
+            "auth": {
+              "type": "noauth"
+            },
+            "body": {
+              "mode": "raw",
+              "raw": "{\n  \"correo\": \"ANA@mail.com\",\n  \"contrasena\": \"Turista123\"\n}",
+              "options": {
+                "raw": {
+                  "language": "json"
+                }
+              }
+            }
+          }
+        },
+        {
+          "name": "Registro de usuario nuevo",
+          "event": [
+            {
+              "listen": "test",
+              "script": {
+                "type": "text/javascript",
+                "exec": [
+                  "pm.test('Responde 201', () => pm.response.to.have.status(201));",
+                  "pm.test(\"Formato ok:true\", () => { pm.expect(pm.response.json().ok).to.eql(true); });",
+                  "pm.test(\"Guarda tokenNuevo\", () => { pm.collectionVariables.set('tokenNuevo', pm.response.json().data.token); });",
+                  "pm.test(\"Guarda idNuevo\", () => { pm.collectionVariables.set('idNuevo', pm.response.json().data.usuario.id); });",
+                  "pm.test(\"Nace como TURISTA\", () => { pm.expect(pm.response.json().data.usuario.rol).to.eql(\"TURISTA\"); });"
+                ]
+              }
+            }
+          ],
+          "request": {
+            "method": "POST",
+            "header": [
+              {
+                "key": "Content-Type",
+                "value": "application/json"
+              }
+            ],
+            "url": {
+              "raw": "{{baseUrl}}/auth/registro",
+              "host": [
+                "{{baseUrl}}"
+              ],
+              "path": [
+                "auth",
+                "registro"
+              ]
+            },
+            "auth": {
+              "type": "noauth"
+            },
+            "body": {
+              "mode": "raw",
+              "raw": "{\n  \"nombre_completo\": \"Luis Mamani\",\n  \"correo\": \"{{correoNuevo}}\",\n  \"contrasena\": \"Cusco2026\",\n  \"telefono\": \"984123456\"\n}",
+              "options": {
+                "raw": {
+                  "language": "json"
+                }
+              }
+            }
+          }
+        },
+        {
+          "name": "Registro con correo repetido",
+          "event": [
+            {
+              "listen": "test",
+              "script": {
+                "type": "text/javascript",
+                "exec": [
+                  "pm.test('Responde 409', () => pm.response.to.have.status(409));",
+                  "pm.test(\"Formato ok:false\", () => { pm.expect(pm.response.json().ok).to.eql(false); });",
+                  "pm.test(\"Código DUPLICATE\", () => { pm.expect(pm.response.json().error.code).to.eql(\"DUPLICATE\"); });"
+                ]
+              }
+            }
+          ],
+          "request": {
+            "method": "POST",
+            "header": [
+              {
+                "key": "Content-Type",
+                "value": "application/json"
+              }
+            ],
+            "url": {
+              "raw": "{{baseUrl}}/auth/registro",
+              "host": [
+                "{{baseUrl}}"
+              ],
+              "path": [
+                "auth",
+                "registro"
+              ]
+            },
+            "auth": {
+              "type": "noauth"
+            },
+            "body": {
+              "mode": "raw",
+              "raw": "{\n  \"nombre_completo\": \"Otro\",\n  \"correo\": \"{{correoNuevo}}\",\n  \"contrasena\": \"Cusco2026\"\n}",
+              "options": {
+                "raw": {
+                  "language": "json"
+                }
+              }
+            }
+          }
+        },
+        {
+          "name": "Registro con datos inválidos",
+          "event": [
+            {
+              "listen": "test",
+              "script": {
+                "type": "text/javascript",
+                "exec": [
+                  "pm.test('Responde 400', () => pm.response.to.have.status(400));",
+                  "pm.test(\"Formato ok:false\", () => { pm.expect(pm.response.json().ok).to.eql(false); });",
+                  "pm.test(\"Código VALIDATION_ERROR\", () => { pm.expect(pm.response.json().error.code).to.eql(\"VALIDATION_ERROR\"); });",
+                  "pm.test(\"Detalla los 3 campos\", () => { pm.expect(pm.response.json().error.details.length).to.be.above(2); });"
+                ]
+              }
+            }
+          ],
+          "request": {
+            "method": "POST",
+            "header": [
+              {
+                "key": "Content-Type",
+                "value": "application/json"
+              }
+            ],
+            "url": {
+              "raw": "{{baseUrl}}/auth/registro",
+              "host": [
+                "{{baseUrl}}"
+              ],
+              "path": [
+                "auth",
+                "registro"
+              ]
+            },
+            "auth": {
+              "type": "noauth"
+            },
+            "body": {
+              "mode": "raw",
+              "raw": "{\n  \"nombre_completo\": \"L\",\n  \"correo\": \"no-es-correo\",\n  \"contrasena\": \"corta\"\n}",
+              "options": {
+                "raw": {
+                  "language": "json"
+                }
+              }
+            }
+          }
+        },
+        {
+          "name": "Login con contraseña incorrecta",
+          "event": [
+            {
+              "listen": "test",
+              "script": {
+                "type": "text/javascript",
+                "exec": [
+                  "pm.test('Responde 401', () => pm.response.to.have.status(401));",
+                  "pm.test(\"Formato ok:false\", () => { pm.expect(pm.response.json().ok).to.eql(false); });",
+                  "pm.test(\"Código INVALID_CREDENTIALS\", () => { pm.expect(pm.response.json().error.code).to.eql(\"INVALID_CREDENTIALS\"); });"
+                ]
+              }
+            }
+          ],
+          "request": {
+            "method": "POST",
+            "header": [
+              {
+                "key": "Content-Type",
+                "value": "application/json"
+              }
+            ],
+            "url": {
+              "raw": "{{baseUrl}}/auth/login",
+              "host": [
+                "{{baseUrl}}"
+              ],
+              "path": [
+                "auth",
+                "login"
+              ]
+            },
+            "auth": {
+              "type": "noauth"
+            },
+            "body": {
+              "mode": "raw",
+              "raw": "{\n  \"correo\": \"ana@mail.com\",\n  \"contrasena\": \"incorrecta\"\n}",
+              "options": {
+                "raw": {
+                  "language": "json"
+                }
+              }
+            }
+          }
+        },
+        {
+          "name": "Login con correo inexistente (mismo mensaje)",
+          "event": [
+            {
+              "listen": "test",
+              "script": {
+                "type": "text/javascript",
+                "exec": [
+                  "pm.test('Responde 401', () => pm.response.to.have.status(401));",
+                  "pm.test(\"Formato ok:false\", () => { pm.expect(pm.response.json().ok).to.eql(false); });",
+                  "pm.test(\"Código INVALID_CREDENTIALS\", () => { pm.expect(pm.response.json().error.code).to.eql(\"INVALID_CREDENTIALS\"); });"
+                ]
+              }
+            }
+          ],
+          "request": {
+            "method": "POST",
+            "header": [
+              {
+                "key": "Content-Type",
+                "value": "application/json"
+              }
+            ],
+            "url": {
+              "raw": "{{baseUrl}}/auth/login",
+              "host": [
+                "{{baseUrl}}"
+              ],
+              "path": [
+                "auth",
+                "login"
+              ]
+            },
+            "auth": {
+              "type": "noauth"
+            },
+            "body": {
+              "mode": "raw",
+              "raw": "{\n  \"correo\": \"nadie@mail.com\",\n  \"contrasena\": \"incorrecta\"\n}",
+              "options": {
+                "raw": {
+                  "language": "json"
+                }
+              }
+            }
+          }
+        },
+        {
+          "name": "GET /auth/me",
+          "event": [
+            {
+              "listen": "test",
+              "script": {
+                "type": "text/javascript",
+                "exec": [
+                  "pm.test('Responde 200', () => pm.response.to.have.status(200));",
+                  "pm.test(\"Formato ok:true\", () => { pm.expect(pm.response.json().ok).to.eql(true); });",
+                  "pm.test(\"Es Ana\", () => { pm.expect(pm.response.json().data.correo).to.eql(\"ana@mail.com\"); });"
+                ]
+              }
+            }
+          ],
+          "request": {
+            "method": "GET",
+            "header": [],
+            "url": {
+              "raw": "{{baseUrl}}/auth/me",
+              "host": [
+                "{{baseUrl}}"
+              ],
+              "path": [
+                "auth",
+                "me"
+              ]
+            },
+            "auth": {
+              "type": "bearer",
+              "bearer": [
+                {
+                  "key": "token",
+                  "value": "{{tokenAna}}",
+                  "type": "string"
+                }
+              ]
+            }
+          }
+        },
+        {
+          "name": "GET /auth/me sin token",
+          "event": [
+            {
+              "listen": "test",
+              "script": {
+                "type": "text/javascript",
+                "exec": [
+                  "pm.test('Responde 401', () => pm.response.to.have.status(401));",
+                  "pm.test(\"Formato ok:false\", () => { pm.expect(pm.response.json().ok).to.eql(false); });",
+                  "pm.test(\"Código NO_TOKEN\", () => { pm.expect(pm.response.json().error.code).to.eql(\"NO_TOKEN\"); });"
+                ]
+              }
+            }
+          ],
+          "request": {
+            "method": "GET",
+            "header": [],
+            "url": {
+              "raw": "{{baseUrl}}/auth/me",
+              "host": [
+                "{{baseUrl}}"
+              ],
+              "path": [
+                "auth",
+                "me"
+              ]
+            },
+            "auth": {
+              "type": "noauth"
+            }
+          }
+        },
+        {
+          "name": "GET /auth/me con token inválido",
+          "event": [
+            {
+              "listen": "test",
+              "script": {
+                "type": "text/javascript",
+                "exec": [
+                  "pm.test('Responde 401', () => pm.response.to.have.status(401));",
+                  "pm.test(\"Formato ok:false\", () => { pm.expect(pm.response.json().ok).to.eql(false); });",
+                  "pm.test(\"Código INVALID_TOKEN\", () => { pm.expect(pm.response.json().error.code).to.eql(\"INVALID_TOKEN\"); });"
+                ]
+              }
+            }
+          ],
+          "request": {
+            "method": "GET",
+            "header": [],
+            "url": {
+              "raw": "{{baseUrl}}/auth/me",
+              "host": [
+                "{{baseUrl}}"
+              ],
+              "path": [
+                "auth",
+                "me"
+              ]
+            },
+            "auth": {
+              "type": "bearer",
+              "bearer": [
+                {
+                  "key": "token",
+                  "value": "token.invalido.123",
+                  "type": "string"
+                }
+              ]
+            }
+          }
+        }
+      ]
+    },
+    {
+      "name": "01 Catálogo",
+      "description": "Categorías, zonas y atractivos: leer es público, escribir es solo ADMIN.",
+      "item": [
+        {
+          "name": "GET /categorias",
+          "event": [
+            {
+              "listen": "test",
+              "script": {
+                "type": "text/javascript",
+                "exec": [
+                  "pm.test('Responde 200', () => pm.response.to.have.status(200));",
+                  "pm.test(\"Formato ok:true\", () => { pm.expect(pm.response.json().ok).to.eql(true); });",
+                  "pm.test(\"5 categorías\", () => { pm.expect(pm.response.json().data.length).to.eql(5); });"
+                ]
+              }
+            }
+          ],
+          "request": {
+            "method": "GET",
+            "header": [],
+            "url": {
+              "raw": "{{baseUrl}}/categorias",
+              "host": [
+                "{{baseUrl}}"
+              ],
+              "path": [
+                "categorias"
+              ]
+            },
+            "auth": {
+              "type": "noauth"
+            }
+          }
+        },
+        {
+          "name": "GET /categorias/1",
+          "event": [
+            {
+              "listen": "test",
+              "script": {
+                "type": "text/javascript",
+                "exec": [
+                  "pm.test('Responde 200', () => pm.response.to.have.status(200));",
+                  "pm.test(\"Formato ok:true\", () => { pm.expect(pm.response.json().ok).to.eql(true); });",
+                  "pm.test(\"Sitio arqueológico\", () => { pm.expect(pm.response.json().data.nombre).to.eql(\"Sitio arqueológico\"); });"
+                ]
+              }
+            }
+          ],
+          "request": {
+            "method": "GET",
+            "header": [],
+            "url": {
+              "raw": "{{baseUrl}}/categorias/1",
+              "host": [
+                "{{baseUrl}}"
+              ],
+              "path": [
+                "categorias",
+                "1"
+              ]
+            },
+            "auth": {
+              "type": "noauth"
+            }
+          }
+        },
+        {
+          "name": "GET /categorias/999",
+          "event": [
+            {
+              "listen": "test",
+              "script": {
+                "type": "text/javascript",
+                "exec": [
+                  "pm.test('Responde 404', () => pm.response.to.have.status(404));",
+                  "pm.test(\"Formato ok:false\", () => { pm.expect(pm.response.json().ok).to.eql(false); });",
+                  "pm.test(\"Código NOT_FOUND\", () => { pm.expect(pm.response.json().error.code).to.eql(\"NOT_FOUND\"); });"
+                ]
+              }
+            }
+          ],
+          "request": {
+            "method": "GET",
+            "header": [],
+            "url": {
+              "raw": "{{baseUrl}}/categorias/999",
+              "host": [
+                "{{baseUrl}}"
+              ],
+              "path": [
+                "categorias",
+                "999"
+              ]
+            },
+            "auth": {
+              "type": "noauth"
+            }
+          }
+        },
+        {
+          "name": "POST /categorias sin token",
+          "event": [
+            {
+              "listen": "test",
+              "script": {
+                "type": "text/javascript",
+                "exec": [
+                  "pm.test('Responde 401', () => pm.response.to.have.status(401));",
+                  "pm.test(\"Formato ok:false\", () => { pm.expect(pm.response.json().ok).to.eql(false); });",
+                  "pm.test(\"Código NO_TOKEN\", () => { pm.expect(pm.response.json().error.code).to.eql(\"NO_TOKEN\"); });"
+                ]
+              }
+            }
+          ],
+          "request": {
+            "method": "POST",
+            "header": [
+              {
+                "key": "Content-Type",
+                "value": "application/json"
+              }
+            ],
+            "url": {
+              "raw": "{{baseUrl}}/categorias",
+              "host": [
+                "{{baseUrl}}"
+              ],
+              "path": [
+                "categorias"
+              ]
+            },
+            "auth": {
+              "type": "noauth"
+            },
+            "body": {
+              "mode": "raw",
+              "raw": "{\n  \"nombre\": \"Parque\"\n}",
+              "options": {
+                "raw": {
+                  "language": "json"
+                }
+              }
+            }
+          }
+        },
+        {
+          "name": "POST /categorias como turista",
+          "event": [
+            {
+              "listen": "test",
+              "script": {
+                "type": "text/javascript",
+                "exec": [
+                  "pm.test('Responde 403', () => pm.response.to.have.status(403));",
+                  "pm.test(\"Formato ok:false\", () => { pm.expect(pm.response.json().ok).to.eql(false); });",
+                  "pm.test(\"Código FORBIDDEN\", () => { pm.expect(pm.response.json().error.code).to.eql(\"FORBIDDEN\"); });"
+                ]
+              }
+            }
+          ],
+          "request": {
+            "method": "POST",
+            "header": [
+              {
+                "key": "Content-Type",
+                "value": "application/json"
+              }
+            ],
+            "url": {
+              "raw": "{{baseUrl}}/categorias",
+              "host": [
+                "{{baseUrl}}"
+              ],
+              "path": [
+                "categorias"
+              ]
+            },
+            "auth": {
+              "type": "bearer",
+              "bearer": [
+                {
+                  "key": "token",
+                  "value": "{{tokenAna}}",
+                  "type": "string"
+                }
+              ]
+            },
+            "body": {
+              "mode": "raw",
+              "raw": "{\n  \"nombre\": \"Parque\"\n}",
+              "options": {
+                "raw": {
+                  "language": "json"
+                }
+              }
+            }
+          }
+        },
+        {
+          "name": "POST /categorias (admin)",
+          "event": [
+            {
+              "listen": "test",
+              "script": {
+                "type": "text/javascript",
+                "exec": [
+                  "pm.test('Responde 201', () => pm.response.to.have.status(201));",
+                  "pm.test(\"Formato ok:true\", () => { pm.expect(pm.response.json().ok).to.eql(true); });",
+                  "pm.test(\"Guarda idCategoria\", () => { pm.collectionVariables.set('idCategoria', pm.response.json().data.id); });",
+                  "pm.test(\"Guarda tildes\", () => { pm.expect(pm.response.json().data.descripcion).to.eql(\"Áreas verdes y lagunas\"); });"
+                ]
+              }
+            }
+          ],
+          "request": {
+            "method": "POST",
+            "header": [
+              {
+                "key": "Content-Type",
+                "value": "application/json"
+              }
+            ],
+            "url": {
+              "raw": "{{baseUrl}}/categorias",
+              "host": [
+                "{{baseUrl}}"
+              ],
+              "path": [
+                "categorias"
+              ]
+            },
+            "auth": {
+              "type": "bearer",
+              "bearer": [
+                {
+                  "key": "token",
+                  "value": "{{tokenAdmin}}",
+                  "type": "string"
+                }
+              ]
+            },
+            "body": {
+              "mode": "raw",
+              "raw": "{\n  \"nombre\": \"Parque natural\",\n  \"descripcion\": \"Áreas verdes y lagunas\"\n}",
+              "options": {
+                "raw": {
+                  "language": "json"
+                }
+              }
+            }
+          }
+        },
+        {
+          "name": "POST /categorias repetida",
+          "event": [
+            {
+              "listen": "test",
+              "script": {
+                "type": "text/javascript",
+                "exec": [
+                  "pm.test('Responde 409', () => pm.response.to.have.status(409));",
+                  "pm.test(\"Formato ok:false\", () => { pm.expect(pm.response.json().ok).to.eql(false); });",
+                  "pm.test(\"Código DUPLICATE\", () => { pm.expect(pm.response.json().error.code).to.eql(\"DUPLICATE\"); });"
+                ]
+              }
+            }
+          ],
+          "request": {
+            "method": "POST",
+            "header": [
+              {
+                "key": "Content-Type",
+                "value": "application/json"
+              }
+            ],
+            "url": {
+              "raw": "{{baseUrl}}/categorias",
+              "host": [
+                "{{baseUrl}}"
+              ],
+              "path": [
+                "categorias"
+              ]
+            },
+            "auth": {
+              "type": "bearer",
+              "bearer": [
+                {
+                  "key": "token",
+                  "value": "{{tokenAdmin}}",
+                  "type": "string"
+                }
+              ]
+            },
+            "body": {
+              "mode": "raw",
+              "raw": "{\n  \"nombre\": \"Parque natural\"\n}",
+              "options": {
+                "raw": {
+                  "language": "json"
+                }
+              }
+            }
+          }
+        },
+        {
+          "name": "PUT /categorias/{{idCategoria}}",
+          "event": [
+            {
+              "listen": "test",
+              "script": {
+                "type": "text/javascript",
+                "exec": [
+                  "pm.test('Responde 200', () => pm.response.to.have.status(200));",
+                  "pm.test(\"Formato ok:true\", () => { pm.expect(pm.response.json().ok).to.eql(true); });",
+                  "pm.test(\"Renombrada\", () => { pm.expect(pm.response.json().data.nombre).to.eql(\"Naturaleza\"); });"
+                ]
+              }
+            }
+          ],
+          "request": {
+            "method": "PUT",
+            "header": [
+              {
+                "key": "Content-Type",
+                "value": "application/json"
+              }
+            ],
+            "url": {
+              "raw": "{{baseUrl}}/categorias/{{idCategoria}}",
+              "host": [
+                "{{baseUrl}}"
+              ],
+              "path": [
+                "categorias",
+                "{{idCategoria}}"
+              ]
+            },
+            "auth": {
+              "type": "bearer",
+              "bearer": [
+                {
+                  "key": "token",
+                  "value": "{{tokenAdmin}}",
+                  "type": "string"
+                }
+              ]
+            },
+            "body": {
+              "mode": "raw",
+              "raw": "{\n  \"nombre\": \"Naturaleza\",\n  \"descripcion\": null\n}",
+              "options": {
+                "raw": {
+                  "language": "json"
+                }
+              }
+            }
+          }
+        },
+        {
+          "name": "DELETE /categorias/1 (en uso)",
+          "event": [
+            {
+              "listen": "test",
+              "script": {
+                "type": "text/javascript",
+                "exec": [
+                  "pm.test('Responde 409', () => pm.response.to.have.status(409));",
+                  "pm.test(\"Formato ok:false\", () => { pm.expect(pm.response.json().ok).to.eql(false); });",
+                  "pm.test(\"Código IN_USE\", () => { pm.expect(pm.response.json().error.code).to.eql(\"IN_USE\"); });"
+                ]
+              }
+            }
+          ],
+          "request": {
+            "method": "DELETE",
+            "header": [],
+            "url": {
+              "raw": "{{baseUrl}}/categorias/1",
+              "host": [
+                "{{baseUrl}}"
+              ],
+              "path": [
+                "categorias",
+                "1"
+              ]
+            },
+            "auth": {
+              "type": "bearer",
+              "bearer": [
+                {
+                  "key": "token",
+                  "value": "{{tokenAdmin}}",
+                  "type": "string"
+                }
+              ]
+            }
+          }
+        },
+        {
+          "name": "DELETE /categorias/{{idCategoria}}",
+          "event": [
+            {
+              "listen": "test",
+              "script": {
+                "type": "text/javascript",
+                "exec": [
+                  "pm.test('Responde 204', () => pm.response.to.have.status(204));"
+                ]
+              }
+            }
+          ],
+          "request": {
+            "method": "DELETE",
+            "header": [],
+            "url": {
+              "raw": "{{baseUrl}}/categorias/{{idCategoria}}",
+              "host": [
+                "{{baseUrl}}"
+              ],
+              "path": [
+                "categorias",
+                "{{idCategoria}}"
+              ]
+            },
+            "auth": {
+              "type": "bearer",
+              "bearer": [
+                {
+                  "key": "token",
+                  "value": "{{tokenAdmin}}",
+                  "type": "string"
+                }
+              ]
+            }
+          }
+        },
+        {
+          "name": "GET /zonas",
+          "event": [
+            {
+              "listen": "test",
+              "script": {
+                "type": "text/javascript",
+                "exec": [
+                  "pm.test('Responde 200', () => pm.response.to.have.status(200));",
+                  "pm.test(\"Formato ok:true\", () => { pm.expect(pm.response.json().ok).to.eql(true); });",
+                  "pm.test(\"3 zonas\", () => { pm.expect(pm.response.json().data.length).to.eql(3); });"
+                ]
+              }
+            }
+          ],
+          "request": {
+            "method": "GET",
+            "header": [],
+            "url": {
+              "raw": "{{baseUrl}}/zonas",
+              "host": [
+                "{{baseUrl}}"
+              ],
+              "path": [
+                "zonas"
+              ]
+            },
+            "auth": {
+              "type": "noauth"
+            }
+          }
+        },
+        {
+          "name": "POST /zonas (admin)",
+          "event": [
+            {
+              "listen": "test",
+              "script": {
+                "type": "text/javascript",
+                "exec": [
+                  "pm.test('Responde 201', () => pm.response.to.have.status(201));",
+                  "pm.test(\"Formato ok:true\", () => { pm.expect(pm.response.json().ok).to.eql(true); });",
+                  "pm.test(\"Guarda idZona\", () => { pm.collectionVariables.set('idZona', pm.response.json().data.id); });"
+                ]
+              }
+            }
+          ],
+          "request": {
+            "method": "POST",
+            "header": [
+              {
+                "key": "Content-Type",
+                "value": "application/json"
+              }
+            ],
+            "url": {
+              "raw": "{{baseUrl}}/zonas",
+              "host": [
+                "{{baseUrl}}"
+              ],
+              "path": [
+                "zonas"
+              ]
+            },
+            "auth": {
+              "type": "bearer",
+              "bearer": [
+                {
+                  "key": "token",
+                  "value": "{{tokenAdmin}}",
+                  "type": "string"
+                }
+              ]
+            },
+            "body": {
+              "mode": "raw",
+              "raw": "{\n  \"nombre\": \"Sur del Cusco\",\n  \"ciudad\": \"Cusco\"\n}",
+              "options": {
+                "raw": {
+                  "language": "json"
+                }
+              }
+            }
+          }
+        },
+        {
+          "name": "DELETE /zonas/{{idZona}}",
+          "event": [
+            {
+              "listen": "test",
+              "script": {
+                "type": "text/javascript",
+                "exec": [
+                  "pm.test('Responde 204', () => pm.response.to.have.status(204));"
+                ]
+              }
+            }
+          ],
+          "request": {
+            "method": "DELETE",
+            "header": [],
+            "url": {
+              "raw": "{{baseUrl}}/zonas/{{idZona}}",
+              "host": [
+                "{{baseUrl}}"
+              ],
+              "path": [
+                "zonas",
+                "{{idZona}}"
+              ]
+            },
+            "auth": {
+              "type": "bearer",
+              "bearer": [
+                {
+                  "key": "token",
+                  "value": "{{tokenAdmin}}",
+                  "type": "string"
+                }
+              ]
+            }
+          }
+        },
+        {
+          "name": "DELETE /zonas/{{idZona}} otra vez",
+          "event": [
+            {
+              "listen": "test",
+              "script": {
+                "type": "text/javascript",
+                "exec": [
+                  "pm.test('Responde 404', () => pm.response.to.have.status(404));",
+                  "pm.test(\"Formato ok:false\", () => { pm.expect(pm.response.json().ok).to.eql(false); });",
+                  "pm.test(\"Código NOT_FOUND\", () => { pm.expect(pm.response.json().error.code).to.eql(\"NOT_FOUND\"); });"
+                ]
+              }
+            }
+          ],
+          "request": {
+            "method": "DELETE",
+            "header": [],
+            "url": {
+              "raw": "{{baseUrl}}/zonas/{{idZona}}",
+              "host": [
+                "{{baseUrl}}"
+              ],
+              "path": [
+                "zonas",
+                "{{idZona}}"
+              ]
+            },
+            "auth": {
+              "type": "bearer",
+              "bearer": [
+                {
+                  "key": "token",
+                  "value": "{{tokenAdmin}}",
+                  "type": "string"
+                }
+              ]
+            }
+          }
+        },
+        {
+          "name": "GET /atractivos",
+          "event": [
+            {
+              "listen": "test",
+              "script": {
+                "type": "text/javascript",
+                "exec": [
+                  "pm.test('Responde 200', () => pm.response.to.have.status(200));",
+                  "pm.test(\"Formato ok:true\", () => { pm.expect(pm.response.json().ok).to.eql(true); });",
+                  "pm.test(\"Total 14\", () => { pm.expect(pm.response.json().meta.total).to.eql(14); });",
+                  "pm.test(\"10 por página\", () => { pm.expect(pm.response.json().data.length).to.eql(10); });",
+                  "pm.test(\"2 páginas\", () => { pm.expect(pm.response.json().meta.totalPages).to.eql(2); });"
+                ]
+              }
+            }
+          ],
+          "request": {
+            "method": "GET",
+            "header": [],
+            "url": {
+              "raw": "{{baseUrl}}/atractivos",
+              "host": [
+                "{{baseUrl}}"
+              ],
+              "path": [
+                "atractivos"
+              ]
+            },
+            "auth": {
+              "type": "noauth"
+            }
+          }
+        },
+        {
+          "name": "GET /atractivos?page=2&limit=5",
+          "event": [
+            {
+              "listen": "test",
+              "script": {
+                "type": "text/javascript",
+                "exec": [
+                  "pm.test('Responde 200', () => pm.response.to.have.status(200));",
+                  "pm.test(\"Formato ok:true\", () => { pm.expect(pm.response.json().ok).to.eql(true); });",
+                  "pm.test(\"5 en la página 2\", () => { pm.expect(pm.response.json().data.length).to.eql(5); });"
+                ]
+              }
+            }
+          ],
+          "request": {
+            "method": "GET",
+            "header": [],
+            "url": {
+              "raw": "{{baseUrl}}/atractivos?page=2&limit=5",
+              "host": [
+                "{{baseUrl}}"
+              ],
+              "path": [
+                "atractivos"
+              ],
+              "query": [
+                {
+                  "key": "page",
+                  "value": "2"
+                },
+                {
+                  "key": "limit",
+                  "value": "5"
+                }
+              ]
+            },
+            "auth": {
+              "type": "noauth"
+            }
+          }
+        },
+        {
+          "name": "GET /atractivos?categoria_id=4",
+          "event": [
+            {
+              "listen": "test",
+              "script": {
+                "type": "text/javascript",
+                "exec": [
+                  "pm.test('Responde 200', () => pm.response.to.have.status(200));",
+                  "pm.test(\"Formato ok:true\", () => { pm.expect(pm.response.json().ok).to.eql(true); });",
+                  "pm.test(\"Todos son miradores\", () => { pm.response.json().data.forEach((a) => pm.expect(a.categoria_id).to.eql(4)); });"
+                ]
+              }
+            }
+          ],
+          "request": {
+            "method": "GET",
+            "header": [],
+            "url": {
+              "raw": "{{baseUrl}}/atractivos?categoria_id=4",
+              "host": [
+                "{{baseUrl}}"
+              ],
+              "path": [
+                "atractivos"
+              ],
+              "query": [
+                {
+                  "key": "categoria_id",
+                  "value": "4"
+                }
+              ]
+            },
+            "auth": {
+              "type": "noauth"
+            }
+          }
+        },
+        {
+          "name": "GET /atractivos?buscar=sal",
+          "event": [
+            {
+              "listen": "test",
+              "script": {
+                "type": "text/javascript",
+                "exec": [
+                  "pm.test('Responde 200', () => pm.response.to.have.status(200));",
+                  "pm.test(\"Formato ok:true\", () => { pm.expect(pm.response.json().ok).to.eql(true); });",
+                  "pm.test(\"Encuentra las Salineras\", () => { pm.expect(pm.response.json().data[0].nombre).to.eql(\"Salineras de Maras\"); });"
+                ]
+              }
+            }
+          ],
+          "request": {
+            "method": "GET",
+            "header": [],
+            "url": {
+              "raw": "{{baseUrl}}/atractivos?buscar=sal",
+              "host": [
+                "{{baseUrl}}"
+              ],
+              "path": [
+                "atractivos"
+              ],
+              "query": [
+                {
+                  "key": "buscar",
+                  "value": "sal"
+                }
+              ]
+            },
+            "auth": {
+              "type": "noauth"
+            }
+          }
+        },
+        {
+          "name": "GET /atractivos con filtros inválidos",
+          "event": [
+            {
+              "listen": "test",
+              "script": {
+                "type": "text/javascript",
+                "exec": [
+                  "pm.test('Responde 400', () => pm.response.to.have.status(400));",
+                  "pm.test(\"Formato ok:false\", () => { pm.expect(pm.response.json().ok).to.eql(false); });",
+                  "pm.test(\"Código VALIDATION_ERROR\", () => { pm.expect(pm.response.json().error.code).to.eql(\"VALIDATION_ERROR\"); });"
+                ]
+              }
+            }
+          ],
+          "request": {
+            "method": "GET",
+            "header": [],
+            "url": {
+              "raw": "{{baseUrl}}/atractivos?limit=500&categoria_id=abc",
+              "host": [
+                "{{baseUrl}}"
+              ],
+              "path": [
+                "atractivos"
+              ],
+              "query": [
+                {
+                  "key": "limit",
+                  "value": "500"
+                },
+                {
+                  "key": "categoria_id",
+                  "value": "abc"
+                }
+              ]
+            },
+            "auth": {
+              "type": "noauth"
+            }
+          }
+        },
+        {
+          "name": "GET /atractivos/cercanos (Plaza, 0.5 km)",
+          "event": [
+            {
+              "listen": "test",
+              "script": {
+                "type": "text/javascript",
+                "exec": [
+                  "pm.test('Responde 200', () => pm.response.to.have.status(200));",
+                  "pm.test(\"Formato ok:true\", () => { pm.expect(pm.response.json().ok).to.eql(true); });",
+                  "pm.test(\"El primero es la Plaza\", () => { pm.expect(pm.response.json().data[0].nombre).to.eql(\"Plaza de Armas\"); });",
+                  "pm.test(\"Ordenados del más cercano al más lejano\", () => { const d = pm.response.json().data.map((a) => a.distancia_km); pm.expect(d).to.eql([...d].sort((x, y) => x - y)); });",
+                  "pm.test(\"Ninguno a más de 0.5 km\", () => { pm.response.json().data.forEach((a) => pm.expect(a.distancia_km <= 0.5).to.eql(true)); });"
+                ]
+              }
+            }
+          ],
+          "request": {
+            "method": "GET",
+            "header": [],
+            "url": {
+              "raw": "{{baseUrl}}/atractivos/cercanos?lat=-13.5167&lng=-71.9788&radio_km=0.5",
+              "host": [
+                "{{baseUrl}}"
+              ],
+              "path": [
+                "atractivos",
+                "cercanos"
+              ],
+              "query": [
+                {
+                  "key": "lat",
+                  "value": "-13.5167"
+                },
+                {
+                  "key": "lng",
+                  "value": "-71.9788"
+                },
+                {
+                  "key": "radio_km",
+                  "value": "0.5"
+                }
+              ]
+            },
+            "auth": {
+              "type": "noauth"
+            }
+          }
+        },
+        {
+          "name": "GET /atractivos/cercanos sin coordenadas",
+          "event": [
+            {
+              "listen": "test",
+              "script": {
+                "type": "text/javascript",
+                "exec": [
+                  "pm.test('Responde 400', () => pm.response.to.have.status(400));",
+                  "pm.test(\"Formato ok:false\", () => { pm.expect(pm.response.json().ok).to.eql(false); });",
+                  "pm.test(\"Código VALIDATION_ERROR\", () => { pm.expect(pm.response.json().error.code).to.eql(\"VALIDATION_ERROR\"); });"
+                ]
+              }
+            }
+          ],
+          "request": {
+            "method": "GET",
+            "header": [],
+            "url": {
+              "raw": "{{baseUrl}}/atractivos/cercanos",
+              "host": [
+                "{{baseUrl}}"
+              ],
+              "path": [
+                "atractivos",
+                "cercanos"
+              ]
+            },
+            "auth": {
+              "type": "noauth"
+            }
+          }
+        },
+        {
+          "name": "GET /atractivos/2 (con horarios y fotos)",
+          "event": [
+            {
+              "listen": "test",
+              "script": {
+                "type": "text/javascript",
+                "exec": [
+                  "pm.test('Responde 200', () => pm.response.to.have.status(200));",
+                  "pm.test(\"Formato ok:true\", () => { pm.expect(pm.response.json().ok).to.eql(true); });",
+                  "pm.test(\"Qorikancha\", () => { pm.expect(pm.response.json().data.nombre).to.eql(\"Qorikancha\"); });",
+                  "pm.test(\"2 horarios\", () => { pm.expect(pm.response.json().data.horarios.length).to.eql(2); });",
+                  "pm.test(\"1 foto\", () => { pm.expect(pm.response.json().data.fotos.length).to.eql(1); });"
+                ]
+              }
+            }
+          ],
+          "request": {
+            "method": "GET",
+            "header": [],
+            "url": {
+              "raw": "{{baseUrl}}/atractivos/2",
+              "host": [
+                "{{baseUrl}}"
+              ],
+              "path": [
+                "atractivos",
+                "2"
+              ]
+            },
+            "auth": {
+              "type": "noauth"
+            }
+          }
+        },
+        {
+          "name": "GET /atractivos/999",
+          "event": [
+            {
+              "listen": "test",
+              "script": {
+                "type": "text/javascript",
+                "exec": [
+                  "pm.test('Responde 404', () => pm.response.to.have.status(404));",
+                  "pm.test(\"Formato ok:false\", () => { pm.expect(pm.response.json().ok).to.eql(false); });",
+                  "pm.test(\"Código NOT_FOUND\", () => { pm.expect(pm.response.json().error.code).to.eql(\"NOT_FOUND\"); });"
+                ]
+              }
+            }
+          ],
+          "request": {
+            "method": "GET",
+            "header": [],
+            "url": {
+              "raw": "{{baseUrl}}/atractivos/999",
+              "host": [
+                "{{baseUrl}}"
+              ],
+              "path": [
+                "atractivos",
+                "999"
+              ]
+            },
+            "auth": {
+              "type": "noauth"
+            }
+          }
+        },
+        {
+          "name": "GET /atractivos/abc",
+          "event": [
+            {
+              "listen": "test",
+              "script": {
+                "type": "text/javascript",
+                "exec": [
+                  "pm.test('Responde 400', () => pm.response.to.have.status(400));",
+                  "pm.test(\"Formato ok:false\", () => { pm.expect(pm.response.json().ok).to.eql(false); });",
+                  "pm.test(\"Código VALIDATION_ERROR\", () => { pm.expect(pm.response.json().error.code).to.eql(\"VALIDATION_ERROR\"); });"
+                ]
+              }
+            }
+          ],
+          "request": {
+            "method": "GET",
+            "header": [],
+            "url": {
+              "raw": "{{baseUrl}}/atractivos/abc",
+              "host": [
+                "{{baseUrl}}"
+              ],
+              "path": [
+                "atractivos",
+                "abc"
+              ]
+            },
+            "auth": {
+              "type": "noauth"
+            }
+          }
+        },
+        {
+          "name": "POST /atractivos (admin)",
+          "event": [
+            {
+              "listen": "test",
+              "script": {
+                "type": "text/javascript",
+                "exec": [
+                  "pm.test('Responde 201', () => pm.response.to.have.status(201));",
+                  "pm.test(\"Formato ok:true\", () => { pm.expect(pm.response.json().ok).to.eql(true); });",
+                  "pm.test(\"Guarda idAtractivo\", () => { pm.collectionVariables.set('idAtractivo', pm.response.json().data.id); });",
+                  "pm.test(\"Calificación inicial 0\", () => { pm.expect(pm.response.json().data.calificacion).to.eql(0); });"
+                ]
+              }
+            }
+          ],
+          "request": {
+            "method": "POST",
+            "header": [
+              {
+                "key": "Content-Type",
+                "value": "application/json"
+              }
+            ],
+            "url": {
+              "raw": "{{baseUrl}}/atractivos",
+              "host": [
+                "{{baseUrl}}"
+              ],
+              "path": [
+                "atractivos"
+              ]
+            },
+            "auth": {
+              "type": "bearer",
+              "bearer": [
+                {
+                  "key": "token",
+                  "value": "{{tokenAdmin}}",
+                  "type": "string"
+                }
+              ]
+            },
+            "body": {
+              "mode": "raw",
+              "raw": "{\n  \"nombre\": \"Mirador de San Cristóbal\",\n  \"descripcion\": \"Vista del centro histórico.\",\n  \"latitud\": -13.5128,\n  \"longitud\": -71.9822,\n  \"precio_entrada\": 0,\n  \"categoria_id\": 4,\n  \"zona_id\": 1\n}",
+              "options": {
+                "raw": {
+                  "language": "json"
+                }
+              }
+            }
+          }
+        },
+        {
+          "name": "POST /atractivos con categoría inexistente",
+          "event": [
+            {
+              "listen": "test",
+              "script": {
+                "type": "text/javascript",
+                "exec": [
+                  "pm.test('Responde 400', () => pm.response.to.have.status(400));",
+                  "pm.test(\"Formato ok:false\", () => { pm.expect(pm.response.json().ok).to.eql(false); });",
+                  "pm.test(\"Código INVALID_REFERENCE\", () => { pm.expect(pm.response.json().error.code).to.eql(\"INVALID_REFERENCE\"); });"
+                ]
+              }
+            }
+          ],
+          "request": {
+            "method": "POST",
+            "header": [
+              {
+                "key": "Content-Type",
+                "value": "application/json"
+              }
+            ],
+            "url": {
+              "raw": "{{baseUrl}}/atractivos",
+              "host": [
+                "{{baseUrl}}"
+              ],
+              "path": [
+                "atractivos"
+              ]
+            },
+            "auth": {
+              "type": "bearer",
+              "bearer": [
+                {
+                  "key": "token",
+                  "value": "{{tokenAdmin}}",
+                  "type": "string"
+                }
+              ]
+            },
+            "body": {
+              "mode": "raw",
+              "raw": "{\n  \"nombre\": \"Mirador de San Cristóbal\",\n  \"descripcion\": \"Vista del centro histórico.\",\n  \"latitud\": -13.5128,\n  \"longitud\": -71.9822,\n  \"precio_entrada\": 0,\n  \"categoria_id\": 999,\n  \"zona_id\": 1\n}",
+              "options": {
+                "raw": {
+                  "language": "json"
+                }
+              }
+            }
+          }
+        },
+        {
+          "name": "POST /atractivos solo con latitud",
+          "event": [
+            {
+              "listen": "test",
+              "script": {
+                "type": "text/javascript",
+                "exec": [
+                  "pm.test('Responde 400', () => pm.response.to.have.status(400));",
+                  "pm.test(\"Formato ok:false\", () => { pm.expect(pm.response.json().ok).to.eql(false); });",
+                  "pm.test(\"Código VALIDATION_ERROR\", () => { pm.expect(pm.response.json().error.code).to.eql(\"VALIDATION_ERROR\"); });"
+                ]
+              }
+            }
+          ],
+          "request": {
+            "method": "POST",
+            "header": [
+              {
+                "key": "Content-Type",
+                "value": "application/json"
+              }
+            ],
+            "url": {
+              "raw": "{{baseUrl}}/atractivos",
+              "host": [
+                "{{baseUrl}}"
+              ],
+              "path": [
+                "atractivos"
+              ]
+            },
+            "auth": {
+              "type": "bearer",
+              "bearer": [
+                {
+                  "key": "token",
+                  "value": "{{tokenAdmin}}",
+                  "type": "string"
+                }
+              ]
+            },
+            "body": {
+              "mode": "raw",
+              "raw": "{\n  \"nombre\": \"Prueba\",\n  \"latitud\": -13.5,\n  \"categoria_id\": 1,\n  \"zona_id\": 1\n}",
+              "options": {
+                "raw": {
+                  "language": "json"
+                }
+              }
+            }
+          }
+        },
+        {
+          "name": "PUT /atractivos/{{idAtractivo}}",
+          "event": [
+            {
+              "listen": "test",
+              "script": {
+                "type": "text/javascript",
+                "exec": [
+                  "pm.test('Responde 200', () => pm.response.to.have.status(200));",
+                  "pm.test(\"Formato ok:true\", () => { pm.expect(pm.response.json().ok).to.eql(true); });",
+                  "pm.test(\"Precio 5\", () => { pm.expect(pm.response.json().data.precio_entrada).to.eql(5); });"
+                ]
+              }
+            }
+          ],
+          "request": {
+            "method": "PUT",
+            "header": [
+              {
+                "key": "Content-Type",
+                "value": "application/json"
+              }
+            ],
+            "url": {
+              "raw": "{{baseUrl}}/atractivos/{{idAtractivo}}",
+              "host": [
+                "{{baseUrl}}"
+              ],
+              "path": [
+                "atractivos",
+                "{{idAtractivo}}"
+              ]
+            },
+            "auth": {
+              "type": "bearer",
+              "bearer": [
+                {
+                  "key": "token",
+                  "value": "{{tokenAdmin}}",
+                  "type": "string"
+                }
+              ]
+            },
+            "body": {
+              "mode": "raw",
+              "raw": "{\n  \"nombre\": \"Mirador de San Cristóbal\",\n  \"descripcion\": \"Vista del centro histórico.\",\n  \"latitud\": -13.5128,\n  \"longitud\": -71.9822,\n  \"precio_entrada\": 5,\n  \"categoria_id\": 4,\n  \"zona_id\": 1\n}",
+              "options": {
+                "raw": {
+                  "language": "json"
+                }
+              }
+            }
+          }
+        },
+        {
+          "name": "POST horario",
+          "event": [
+            {
+              "listen": "test",
+              "script": {
+                "type": "text/javascript",
+                "exec": [
+                  "pm.test('Responde 201', () => pm.response.to.have.status(201));",
+                  "pm.test(\"Formato ok:true\", () => { pm.expect(pm.response.json().ok).to.eql(true); });",
+                  "pm.test(\"Guarda idHorario\", () => { pm.collectionVariables.set('idHorario', pm.response.json().data.id); });"
+                ]
+              }
+            }
+          ],
+          "request": {
+            "method": "POST",
+            "header": [
+              {
+                "key": "Content-Type",
+                "value": "application/json"
+              }
+            ],
+            "url": {
+              "raw": "{{baseUrl}}/atractivos/{{idAtractivo}}/horarios",
+              "host": [
+                "{{baseUrl}}"
+              ],
+              "path": [
+                "atractivos",
+                "{{idAtractivo}}",
+                "horarios"
+              ]
+            },
+            "auth": {
+              "type": "bearer",
+              "bearer": [
+                {
+                  "key": "token",
+                  "value": "{{tokenAdmin}}",
+                  "type": "string"
+                }
+              ]
+            },
+            "body": {
+              "mode": "raw",
+              "raw": "{\n  \"dia_semana\": \"Lunes a Domingo\",\n  \"hora_apertura\": \"06:00\",\n  \"hora_cierre\": \"19:00\"\n}",
+              "options": {
+                "raw": {
+                  "language": "json"
+                }
+              }
+            }
+          }
+        },
+        {
+          "name": "POST horario con cierre antes de apertura",
+          "event": [
+            {
+              "listen": "test",
+              "script": {
+                "type": "text/javascript",
+                "exec": [
+                  "pm.test('Responde 422', () => pm.response.to.have.status(422));",
+                  "pm.test(\"Formato ok:false\", () => { pm.expect(pm.response.json().ok).to.eql(false); });",
+                  "pm.test(\"Código BUSINESS_RULE\", () => { pm.expect(pm.response.json().error.code).to.eql(\"BUSINESS_RULE\"); });"
+                ]
+              }
+            }
+          ],
+          "request": {
+            "method": "POST",
+            "header": [
+              {
+                "key": "Content-Type",
+                "value": "application/json"
+              }
+            ],
+            "url": {
+              "raw": "{{baseUrl}}/atractivos/{{idAtractivo}}/horarios",
+              "host": [
+                "{{baseUrl}}"
+              ],
+              "path": [
+                "atractivos",
+                "{{idAtractivo}}",
+                "horarios"
+              ]
+            },
+            "auth": {
+              "type": "bearer",
+              "bearer": [
+                {
+                  "key": "token",
+                  "value": "{{tokenAdmin}}",
+                  "type": "string"
+                }
+              ]
+            },
+            "body": {
+              "mode": "raw",
+              "raw": "{\n  \"dia_semana\": \"Lunes\",\n  \"hora_apertura\": \"18:00\",\n  \"hora_cierre\": \"08:00\"\n}",
+              "options": {
+                "raw": {
+                  "language": "json"
+                }
+              }
+            }
+          }
+        },
+        {
+          "name": "POST foto",
+          "event": [
+            {
+              "listen": "test",
+              "script": {
+                "type": "text/javascript",
+                "exec": [
+                  "pm.test('Responde 201', () => pm.response.to.have.status(201));",
+                  "pm.test(\"Formato ok:true\", () => { pm.expect(pm.response.json().ok).to.eql(true); });",
+                  "pm.test(\"Guarda idFoto\", () => { pm.collectionVariables.set('idFoto', pm.response.json().data.id); });"
+                ]
+              }
+            }
+          ],
+          "request": {
+            "method": "POST",
+            "header": [
+              {
+                "key": "Content-Type",
+                "value": "application/json"
+              }
+            ],
+            "url": {
+              "raw": "{{baseUrl}}/atractivos/{{idAtractivo}}/fotos",
+              "host": [
+                "{{baseUrl}}"
+              ],
+              "path": [
+                "atractivos",
+                "{{idAtractivo}}",
+                "fotos"
+              ]
+            },
+            "auth": {
+              "type": "bearer",
+              "bearer": [
+                {
+                  "key": "token",
+                  "value": "{{tokenAdmin}}",
+                  "type": "string"
+                }
+              ]
+            },
+            "body": {
+              "mode": "raw",
+              "raw": "{\n  \"url_foto\": \"img/san-cristobal.jpg\",\n  \"descripcion\": \"Vista al atardecer\"\n}",
+              "options": {
+                "raw": {
+                  "language": "json"
+                }
+              }
+            }
+          }
+        },
+        {
+          "name": "GET fotos",
+          "event": [
+            {
+              "listen": "test",
+              "script": {
+                "type": "text/javascript",
+                "exec": [
+                  "pm.test('Responde 200', () => pm.response.to.have.status(200));",
+                  "pm.test(\"Formato ok:true\", () => { pm.expect(pm.response.json().ok).to.eql(true); });",
+                  "pm.test(\"1 foto\", () => { pm.expect(pm.response.json().data.length).to.eql(1); });"
+                ]
+              }
+            }
+          ],
+          "request": {
+            "method": "GET",
+            "header": [],
+            "url": {
+              "raw": "{{baseUrl}}/atractivos/{{idAtractivo}}/fotos",
+              "host": [
+                "{{baseUrl}}"
+              ],
+              "path": [
+                "atractivos",
+                "{{idAtractivo}}",
+                "fotos"
+              ]
+            },
+            "auth": {
+              "type": "noauth"
+            }
+          }
+        },
+        {
+          "name": "DELETE foto",
+          "event": [
+            {
+              "listen": "test",
+              "script": {
+                "type": "text/javascript",
+                "exec": [
+                  "pm.test('Responde 204', () => pm.response.to.have.status(204));"
+                ]
+              }
+            }
+          ],
+          "request": {
+            "method": "DELETE",
+            "header": [],
+            "url": {
+              "raw": "{{baseUrl}}/atractivos/{{idAtractivo}}/fotos/{{idFoto}}",
+              "host": [
+                "{{baseUrl}}"
+              ],
+              "path": [
+                "atractivos",
+                "{{idAtractivo}}",
+                "fotos",
+                "{{idFoto}}"
+              ]
+            },
+            "auth": {
+              "type": "bearer",
+              "bearer": [
+                {
+                  "key": "token",
+                  "value": "{{tokenAdmin}}",
+                  "type": "string"
+                }
+              ]
+            }
+          }
+        },
+        {
+          "name": "DELETE horario",
+          "event": [
+            {
+              "listen": "test",
+              "script": {
+                "type": "text/javascript",
+                "exec": [
+                  "pm.test('Responde 204', () => pm.response.to.have.status(204));"
+                ]
+              }
+            }
+          ],
+          "request": {
+            "method": "DELETE",
+            "header": [],
+            "url": {
+              "raw": "{{baseUrl}}/atractivos/{{idAtractivo}}/horarios/{{idHorario}}",
+              "host": [
+                "{{baseUrl}}"
+              ],
+              "path": [
+                "atractivos",
+                "{{idAtractivo}}",
+                "horarios",
+                "{{idHorario}}"
+              ]
+            },
+            "auth": {
+              "type": "bearer",
+              "bearer": [
+                {
+                  "key": "token",
+                  "value": "{{tokenAdmin}}",
+                  "type": "string"
+                }
+              ]
+            }
+          }
+        },
+        {
+          "name": "DELETE horario otra vez",
+          "event": [
+            {
+              "listen": "test",
+              "script": {
+                "type": "text/javascript",
+                "exec": [
+                  "pm.test('Responde 404', () => pm.response.to.have.status(404));",
+                  "pm.test(\"Formato ok:false\", () => { pm.expect(pm.response.json().ok).to.eql(false); });",
+                  "pm.test(\"Código NOT_FOUND\", () => { pm.expect(pm.response.json().error.code).to.eql(\"NOT_FOUND\"); });"
+                ]
+              }
+            }
+          ],
+          "request": {
+            "method": "DELETE",
+            "header": [],
+            "url": {
+              "raw": "{{baseUrl}}/atractivos/{{idAtractivo}}/horarios/{{idHorario}}",
+              "host": [
+                "{{baseUrl}}"
+              ],
+              "path": [
+                "atractivos",
+                "{{idAtractivo}}",
+                "horarios",
+                "{{idHorario}}"
+              ]
+            },
+            "auth": {
+              "type": "bearer",
+              "bearer": [
+                {
+                  "key": "token",
+                  "value": "{{tokenAdmin}}",
+                  "type": "string"
+                }
+              ]
+            }
+          }
+        },
+        {
+          "name": "DELETE /atractivos/{{idAtractivo}}",
+          "event": [
+            {
+              "listen": "test",
+              "script": {
+                "type": "text/javascript",
+                "exec": [
+                  "pm.test('Responde 204', () => pm.response.to.have.status(204));"
+                ]
+              }
+            }
+          ],
+          "request": {
+            "method": "DELETE",
+            "header": [],
+            "url": {
+              "raw": "{{baseUrl}}/atractivos/{{idAtractivo}}",
+              "host": [
+                "{{baseUrl}}"
+              ],
+              "path": [
+                "atractivos",
+                "{{idAtractivo}}"
+              ]
+            },
+            "auth": {
+              "type": "bearer",
+              "bearer": [
+                {
+                  "key": "token",
+                  "value": "{{tokenAdmin}}",
+                  "type": "string"
+                }
+              ]
+            }
+          }
+        }
+      ]
+    },
+    {
+      "name": "02 Favoritos",
+      "description": "Cada turista ve y toca solo sus favoritos (el usuario sale del token).",
+      "item": [
+        {
+          "name": "GET /favoritos (Ana)",
+          "event": [
+            {
+              "listen": "test",
+              "script": {
+                "type": "text/javascript",
+                "exec": [
+                  "pm.test('Responde 200', () => pm.response.to.have.status(200));",
+                  "pm.test(\"Formato ok:true\", () => { pm.expect(pm.response.json().ok).to.eql(true); });",
+                  "pm.test(\"Ana tiene 4\", () => { pm.expect(pm.response.json().data.length).to.eql(4); });"
+                ]
+              }
+            }
+          ],
+          "request": {
+            "method": "GET",
+            "header": [],
+            "url": {
+              "raw": "{{baseUrl}}/favoritos",
+              "host": [
+                "{{baseUrl}}"
+              ],
+              "path": [
+                "favoritos"
+              ]
+            },
+            "auth": {
+              "type": "bearer",
+              "bearer": [
+                {
+                  "key": "token",
+                  "value": "{{tokenAna}}",
+                  "type": "string"
+                }
+              ]
+            }
+          }
+        },
+        {
+          "name": "GET /favoritos (usuario nuevo)",
+          "event": [
+            {
+              "listen": "test",
+              "script": {
+                "type": "text/javascript",
+                "exec": [
+                  "pm.test('Responde 200', () => pm.response.to.have.status(200));",
+                  "pm.test(\"Formato ok:true\", () => { pm.expect(pm.response.json().ok).to.eql(true); });",
+                  "pm.test(\"Vacío\", () => { pm.expect(pm.response.json().data.length).to.eql(0); });"
+                ]
+              }
+            }
+          ],
+          "request": {
+            "method": "GET",
+            "header": [],
+            "url": {
+              "raw": "{{baseUrl}}/favoritos",
+              "host": [
+                "{{baseUrl}}"
+              ],
+              "path": [
+                "favoritos"
+              ]
+            },
+            "auth": {
+              "type": "bearer",
+              "bearer": [
+                {
+                  "key": "token",
+                  "value": "{{tokenNuevo}}",
+                  "type": "string"
+                }
+              ]
+            }
+          }
+        },
+        {
+          "name": "GET /favoritos sin token",
+          "event": [
+            {
+              "listen": "test",
+              "script": {
+                "type": "text/javascript",
+                "exec": [
+                  "pm.test('Responde 401', () => pm.response.to.have.status(401));",
+                  "pm.test(\"Formato ok:false\", () => { pm.expect(pm.response.json().ok).to.eql(false); });"
+                ]
+              }
+            }
+          ],
+          "request": {
+            "method": "GET",
+            "header": [],
+            "url": {
+              "raw": "{{baseUrl}}/favoritos",
+              "host": [
+                "{{baseUrl}}"
+              ],
+              "path": [
+                "favoritos"
+              ]
+            },
+            "auth": {
+              "type": "noauth"
+            }
+          }
+        },
+        {
+          "name": "POST favorito: Plaza de Armas",
+          "event": [
+            {
+              "listen": "test",
+              "script": {
+                "type": "text/javascript",
+                "exec": [
+                  "pm.test('Responde 201', () => pm.response.to.have.status(201));",
+                  "pm.test(\"Formato ok:true\", () => { pm.expect(pm.response.json().ok).to.eql(true); });",
+                  "pm.test(\"Guarda favPlaza\", () => { pm.collectionVariables.set('favPlaza', pm.response.json().data.favorito_id); });",
+                  "pm.test(\"Es la Plaza\", () => { pm.expect(pm.response.json().data.nombre).to.eql(\"Plaza de Armas\"); });"
+                ]
+              }
+            }
+          ],
+          "request": {
+            "method": "POST",
+            "header": [
+              {
+                "key": "Content-Type",
+                "value": "application/json"
+              }
+            ],
+            "url": {
+              "raw": "{{baseUrl}}/favoritos",
+              "host": [
+                "{{baseUrl}}"
+              ],
+              "path": [
+                "favoritos"
+              ]
+            },
+            "auth": {
+              "type": "bearer",
+              "bearer": [
+                {
+                  "key": "token",
+                  "value": "{{tokenAna}}",
+                  "type": "string"
+                }
+              ]
+            },
+            "body": {
+              "mode": "raw",
+              "raw": "{\n  \"atractivo_id\": 5\n}",
+              "options": {
+                "raw": {
+                  "language": "json"
+                }
+              }
+            }
+          }
+        },
+        {
+          "name": "POST favorito: Qenqo",
+          "event": [
+            {
+              "listen": "test",
+              "script": {
+                "type": "text/javascript",
+                "exec": [
+                  "pm.test('Responde 201', () => pm.response.to.have.status(201));",
+                  "pm.test(\"Formato ok:true\", () => { pm.expect(pm.response.json().ok).to.eql(true); });",
+                  "pm.test(\"Guarda favQenqo\", () => { pm.collectionVariables.set('favQenqo', pm.response.json().data.favorito_id); });"
+                ]
+              }
+            }
+          ],
+          "request": {
+            "method": "POST",
+            "header": [
+              {
+                "key": "Content-Type",
+                "value": "application/json"
+              }
+            ],
+            "url": {
+              "raw": "{{baseUrl}}/favoritos",
+              "host": [
+                "{{baseUrl}}"
+              ],
+              "path": [
+                "favoritos"
+              ]
+            },
+            "auth": {
+              "type": "bearer",
+              "bearer": [
+                {
+                  "key": "token",
+                  "value": "{{tokenAna}}",
+                  "type": "string"
+                }
+              ]
+            },
+            "body": {
+              "mode": "raw",
+              "raw": "{\n  \"atractivo_id\": 10\n}",
+              "options": {
+                "raw": {
+                  "language": "json"
+                }
+              }
+            }
+          }
+        },
+        {
+          "name": "POST favorito repetido",
+          "event": [
+            {
+              "listen": "test",
+              "script": {
+                "type": "text/javascript",
+                "exec": [
+                  "pm.test('Responde 409', () => pm.response.to.have.status(409));",
+                  "pm.test(\"Formato ok:false\", () => { pm.expect(pm.response.json().ok).to.eql(false); });",
+                  "pm.test(\"Código DUPLICATE\", () => { pm.expect(pm.response.json().error.code).to.eql(\"DUPLICATE\"); });"
+                ]
+              }
+            }
+          ],
+          "request": {
+            "method": "POST",
+            "header": [
+              {
+                "key": "Content-Type",
+                "value": "application/json"
+              }
+            ],
+            "url": {
+              "raw": "{{baseUrl}}/favoritos",
+              "host": [
+                "{{baseUrl}}"
+              ],
+              "path": [
+                "favoritos"
+              ]
+            },
+            "auth": {
+              "type": "bearer",
+              "bearer": [
+                {
+                  "key": "token",
+                  "value": "{{tokenAna}}",
+                  "type": "string"
+                }
+              ]
+            },
+            "body": {
+              "mode": "raw",
+              "raw": "{\n  \"atractivo_id\": 5\n}",
+              "options": {
+                "raw": {
+                  "language": "json"
+                }
+              }
+            }
+          }
+        },
+        {
+          "name": "POST favorito de atractivo inexistente",
+          "event": [
+            {
+              "listen": "test",
+              "script": {
+                "type": "text/javascript",
+                "exec": [
+                  "pm.test('Responde 404', () => pm.response.to.have.status(404));",
+                  "pm.test(\"Formato ok:false\", () => { pm.expect(pm.response.json().ok).to.eql(false); });",
+                  "pm.test(\"Código NOT_FOUND\", () => { pm.expect(pm.response.json().error.code).to.eql(\"NOT_FOUND\"); });"
+                ]
+              }
+            }
+          ],
+          "request": {
+            "method": "POST",
+            "header": [
+              {
+                "key": "Content-Type",
+                "value": "application/json"
+              }
+            ],
+            "url": {
+              "raw": "{{baseUrl}}/favoritos",
+              "host": [
+                "{{baseUrl}}"
+              ],
+              "path": [
+                "favoritos"
+              ]
+            },
+            "auth": {
+              "type": "bearer",
+              "bearer": [
+                {
+                  "key": "token",
+                  "value": "{{tokenAna}}",
+                  "type": "string"
+                }
+              ]
+            },
+            "body": {
+              "mode": "raw",
+              "raw": "{\n  \"atractivo_id\": 999\n}",
+              "options": {
+                "raw": {
+                  "language": "json"
+                }
+              }
+            }
+          }
+        },
+        {
+          "name": "POST favorito del usuario nuevo",
+          "event": [
+            {
+              "listen": "test",
+              "script": {
+                "type": "text/javascript",
+                "exec": [
+                  "pm.test('Responde 201', () => pm.response.to.have.status(201));",
+                  "pm.test(\"Formato ok:true\", () => { pm.expect(pm.response.json().ok).to.eql(true); });",
+                  "pm.test(\"Guarda favNuevo\", () => { pm.collectionVariables.set('favNuevo', pm.response.json().data.favorito_id); });"
+                ]
+              }
+            }
+          ],
+          "request": {
+            "method": "POST",
+            "header": [
+              {
+                "key": "Content-Type",
+                "value": "application/json"
+              }
+            ],
+            "url": {
+              "raw": "{{baseUrl}}/favoritos",
+              "host": [
+                "{{baseUrl}}"
+              ],
+              "path": [
+                "favoritos"
+              ]
+            },
+            "auth": {
+              "type": "bearer",
+              "bearer": [
+                {
+                  "key": "token",
+                  "value": "{{tokenNuevo}}",
+                  "type": "string"
+                }
+              ]
+            },
+            "body": {
+              "mode": "raw",
+              "raw": "{\n  \"atractivo_id\": 1\n}",
+              "options": {
+                "raw": {
+                  "language": "json"
+                }
+              }
+            }
+          }
+        },
+        {
+          "name": "DELETE favorito ajeno (nuevo borra uno de Ana)",
+          "event": [
+            {
+              "listen": "test",
+              "script": {
+                "type": "text/javascript",
+                "exec": [
+                  "pm.test('Responde 404', () => pm.response.to.have.status(404));",
+                  "pm.test(\"Formato ok:false\", () => { pm.expect(pm.response.json().ok).to.eql(false); });",
+                  "pm.test(\"Código NOT_FOUND\", () => { pm.expect(pm.response.json().error.code).to.eql(\"NOT_FOUND\"); });"
+                ]
+              }
+            }
+          ],
+          "request": {
+            "method": "DELETE",
+            "header": [],
+            "url": {
+              "raw": "{{baseUrl}}/favoritos/{{favPlaza}}",
+              "host": [
+                "{{baseUrl}}"
+              ],
+              "path": [
+                "favoritos",
+                "{{favPlaza}}"
+              ]
+            },
+            "auth": {
+              "type": "bearer",
+              "bearer": [
+                {
+                  "key": "token",
+                  "value": "{{tokenNuevo}}",
+                  "type": "string"
+                }
+              ]
+            }
+          }
+        }
+      ]
+    },
+    {
+      "name": "03 Itinerarios e IA",
+      "description": "Paradas desde favoritos, orden por distancia (Haversine), visitas y reseñas verificadas.",
+      "item": [
+        {
+          "name": "GET /itinerarios (Ana)",
+          "event": [
+            {
+              "listen": "test",
+              "script": {
+                "type": "text/javascript",
+                "exec": [
+                  "pm.test('Responde 200', () => pm.response.to.have.status(200));",
+                  "pm.test(\"Formato ok:true\", () => { pm.expect(pm.response.json().ok).to.eql(true); });",
+                  "pm.test(\"Ana tiene 1\", () => { pm.expect(pm.response.json().data.length).to.eql(1); });"
+                ]
+              }
+            }
+          ],
+          "request": {
+            "method": "GET",
+            "header": [],
+            "url": {
+              "raw": "{{baseUrl}}/itinerarios",
+              "host": [
+                "{{baseUrl}}"
+              ],
+              "path": [
+                "itinerarios"
+              ]
+            },
+            "auth": {
+              "type": "bearer",
+              "bearer": [
+                {
+                  "key": "token",
+                  "value": "{{tokenAna}}",
+                  "type": "string"
+                }
+              ]
+            }
+          }
+        },
+        {
+          "name": "GET /itinerarios/1 (viaje de ejemplo)",
+          "event": [
+            {
+              "listen": "test",
+              "script": {
+                "type": "text/javascript",
+                "exec": [
+                  "pm.test('Responde 200', () => pm.response.to.have.status(200));",
+                  "pm.test(\"Formato ok:true\", () => { pm.expect(pm.response.json().ok).to.eql(true); });",
+                  "pm.test(\"3 paradas\", () => { pm.expect(pm.response.json().data.paradas.length).to.eql(3); });",
+                  "pm.test(\"Ordenado por IA\", () => { pm.expect(pm.response.json().data.sugerido_ia).to.eql(true); });",
+                  "pm.test(\"Primero la Catedral\", () => { pm.expect(pm.response.json().data.paradas[0].atractivo).to.eql(\"Catedral del Cusco\"); });"
+                ]
+              }
+            }
+          ],
+          "request": {
+            "method": "GET",
+            "header": [],
+            "url": {
+              "raw": "{{baseUrl}}/itinerarios/1",
+              "host": [
+                "{{baseUrl}}"
+              ],
+              "path": [
+                "itinerarios",
+                "1"
+              ]
+            },
+            "auth": {
+              "type": "bearer",
+              "bearer": [
+                {
+                  "key": "token",
+                  "value": "{{tokenAna}}",
+                  "type": "string"
+                }
+              ]
+            }
+          }
+        },
+        {
+          "name": "POST /itinerarios",
+          "event": [
+            {
+              "listen": "test",
+              "script": {
+                "type": "text/javascript",
+                "exec": [
+                  "pm.test('Responde 201', () => pm.response.to.have.status(201));",
+                  "pm.test(\"Formato ok:true\", () => { pm.expect(pm.response.json().ok).to.eql(true); });",
+                  "pm.test(\"Guarda idIti\", () => { pm.collectionVariables.set('idIti', pm.response.json().data.id); });",
+                  "pm.test(\"Sin paradas\", () => { pm.expect(pm.response.json().data.paradas.length).to.eql(0); });",
+                  "pm.test(\"Costo 0\", () => { pm.expect(pm.response.json().data.costo_total).to.eql(0); });"
+                ]
+              }
+            }
+          ],
+          "request": {
+            "method": "POST",
+            "header": [
+              {
+                "key": "Content-Type",
+                "value": "application/json"
+              }
+            ],
+            "url": {
+              "raw": "{{baseUrl}}/itinerarios",
+              "host": [
+                "{{baseUrl}}"
+              ],
+              "path": [
+                "itinerarios"
+              ]
+            },
+            "auth": {
+              "type": "bearer",
+              "bearer": [
+                {
+                  "key": "token",
+                  "value": "{{tokenAna}}",
+                  "type": "string"
+                }
+              ]
+            },
+            "body": {
+              "mode": "raw",
+              "raw": "{\n  \"nombre\": \"Tarde de ruinas\",\n  \"latitud_inicio\": -13.5175,\n  \"longitud_inicio\": -71.98\n}",
+              "options": {
+                "raw": {
+                  "language": "json"
+                }
+              }
+            }
+          }
+        },
+        {
+          "name": "POST /itinerarios sin nombre",
+          "event": [
+            {
+              "listen": "test",
+              "script": {
+                "type": "text/javascript",
+                "exec": [
+                  "pm.test('Responde 400', () => pm.response.to.have.status(400));",
+                  "pm.test(\"Formato ok:false\", () => { pm.expect(pm.response.json().ok).to.eql(false); });",
+                  "pm.test(\"Código VALIDATION_ERROR\", () => { pm.expect(pm.response.json().error.code).to.eql(\"VALIDATION_ERROR\"); });"
+                ]
+              }
+            }
+          ],
+          "request": {
+            "method": "POST",
+            "header": [
+              {
+                "key": "Content-Type",
+                "value": "application/json"
+              }
+            ],
+            "url": {
+              "raw": "{{baseUrl}}/itinerarios",
+              "host": [
+                "{{baseUrl}}"
+              ],
+              "path": [
+                "itinerarios"
+              ]
+            },
+            "auth": {
+              "type": "bearer",
+              "bearer": [
+                {
+                  "key": "token",
+                  "value": "{{tokenAna}}",
+                  "type": "string"
+                }
+              ]
+            },
+            "body": {
+              "mode": "raw",
+              "raw": "{\n  \"latitud_inicio\": -13.5175,\n  \"longitud_inicio\": -71.98\n}",
+              "options": {
+                "raw": {
+                  "language": "json"
+                }
+              }
+            }
+          }
+        },
+        {
+          "name": "POST /itinerarios solo con latitud",
+          "event": [
+            {
+              "listen": "test",
+              "script": {
+                "type": "text/javascript",
+                "exec": [
+                  "pm.test('Responde 400', () => pm.response.to.have.status(400));",
+                  "pm.test(\"Formato ok:false\", () => { pm.expect(pm.response.json().ok).to.eql(false); });",
+                  "pm.test(\"Código VALIDATION_ERROR\", () => { pm.expect(pm.response.json().error.code).to.eql(\"VALIDATION_ERROR\"); });"
+                ]
+              }
+            }
+          ],
+          "request": {
+            "method": "POST",
+            "header": [
+              {
+                "key": "Content-Type",
+                "value": "application/json"
+              }
+            ],
+            "url": {
+              "raw": "{{baseUrl}}/itinerarios",
+              "host": [
+                "{{baseUrl}}"
+              ],
+              "path": [
+                "itinerarios"
+              ]
+            },
+            "auth": {
+              "type": "bearer",
+              "bearer": [
+                {
+                  "key": "token",
+                  "value": "{{tokenAna}}",
+                  "type": "string"
+                }
+              ]
+            },
+            "body": {
+              "mode": "raw",
+              "raw": "{\n  \"nombre\": \"Prueba\",\n  \"latitud_inicio\": -13.5\n}",
+              "options": {
+                "raw": {
+                  "language": "json"
+                }
+              }
+            }
+          }
+        },
+        {
+          "name": "Agregar parada Qenqo (1.5 h)",
+          "event": [
+            {
+              "listen": "test",
+              "script": {
+                "type": "text/javascript",
+                "exec": [
+                  "pm.test('Responde 201', () => pm.response.to.have.status(201));",
+                  "pm.test(\"Formato ok:true\", () => { pm.expect(pm.response.json().ok).to.eql(true); });",
+                  "pm.test(\"Duración 1.5\", () => { pm.expect(pm.response.json().data.duracion_horas).to.eql(1.5); });",
+                  "pm.test(\"Costo 70 (precio de entrada)\", () => { pm.expect(pm.response.json().data.costo_total).to.eql(70); });"
+                ]
+              }
+            }
+          ],
+          "request": {
+            "method": "POST",
+            "header": [
+              {
+                "key": "Content-Type",
+                "value": "application/json"
+              }
+            ],
+            "url": {
+              "raw": "{{baseUrl}}/itinerarios/{{idIti}}/paradas",
+              "host": [
+                "{{baseUrl}}"
+              ],
+              "path": [
+                "itinerarios",
+                "{{idIti}}",
+                "paradas"
+              ]
+            },
+            "auth": {
+              "type": "bearer",
+              "bearer": [
+                {
+                  "key": "token",
+                  "value": "{{tokenAna}}",
+                  "type": "string"
+                }
+              ]
+            },
+            "body": {
+              "mode": "raw",
+              "raw": "{\n  \"favorito_id\": {{favQenqo}},\n  \"tiempo_estimado_horas\": 1.5\n}",
+              "options": {
+                "raw": {
+                  "language": "json"
+                }
+              }
+            }
+          }
+        },
+        {
+          "name": "Agregar parada Plaza",
+          "event": [
+            {
+              "listen": "test",
+              "script": {
+                "type": "text/javascript",
+                "exec": [
+                  "pm.test('Responde 201', () => pm.response.to.have.status(201));",
+                  "pm.test(\"Formato ok:true\", () => { pm.expect(pm.response.json().ok).to.eql(true); });",
+                  "pm.test(\"Duración 2.5 (1 h por defecto)\", () => { pm.expect(pm.response.json().data.duracion_horas).to.eql(2.5); });",
+                  "pm.test(\"Plaza al final (orden 2)\", () => { pm.expect(pm.response.json().data.paradas[1].atractivo).to.eql(\"Plaza de Armas\"); });"
+                ]
+              }
+            }
+          ],
+          "request": {
+            "method": "POST",
+            "header": [
+              {
+                "key": "Content-Type",
+                "value": "application/json"
+              }
+            ],
+            "url": {
+              "raw": "{{baseUrl}}/itinerarios/{{idIti}}/paradas",
+              "host": [
+                "{{baseUrl}}"
+              ],
+              "path": [
+                "itinerarios",
+                "{{idIti}}",
+                "paradas"
+              ]
+            },
+            "auth": {
+              "type": "bearer",
+              "bearer": [
+                {
+                  "key": "token",
+                  "value": "{{tokenAna}}",
+                  "type": "string"
+                }
+              ]
+            },
+            "body": {
+              "mode": "raw",
+              "raw": "{\n  \"favorito_id\": {{favPlaza}}\n}",
+              "options": {
+                "raw": {
+                  "language": "json"
+                }
+              }
+            }
+          }
+        },
+        {
+          "name": "Agregar parada repetida",
+          "event": [
+            {
+              "listen": "test",
+              "script": {
+                "type": "text/javascript",
+                "exec": [
+                  "pm.test('Responde 409', () => pm.response.to.have.status(409));",
+                  "pm.test(\"Formato ok:false\", () => { pm.expect(pm.response.json().ok).to.eql(false); });",
+                  "pm.test(\"Código DUPLICATE\", () => { pm.expect(pm.response.json().error.code).to.eql(\"DUPLICATE\"); });"
+                ]
+              }
+            }
+          ],
+          "request": {
+            "method": "POST",
+            "header": [
+              {
+                "key": "Content-Type",
+                "value": "application/json"
+              }
+            ],
+            "url": {
+              "raw": "{{baseUrl}}/itinerarios/{{idIti}}/paradas",
+              "host": [
+                "{{baseUrl}}"
+              ],
+              "path": [
+                "itinerarios",
+                "{{idIti}}",
+                "paradas"
+              ]
+            },
+            "auth": {
+              "type": "bearer",
+              "bearer": [
+                {
+                  "key": "token",
+                  "value": "{{tokenAna}}",
+                  "type": "string"
+                }
+              ]
+            },
+            "body": {
+              "mode": "raw",
+              "raw": "{\n  \"favorito_id\": {{favPlaza}}\n}",
+              "options": {
+                "raw": {
+                  "language": "json"
+                }
+              }
+            }
+          }
+        },
+        {
+          "name": "Ver itinerario ajeno",
+          "event": [
+            {
+              "listen": "test",
+              "script": {
+                "type": "text/javascript",
+                "exec": [
+                  "pm.test('Responde 404', () => pm.response.to.have.status(404));",
+                  "pm.test(\"Formato ok:false\", () => { pm.expect(pm.response.json().ok).to.eql(false); });",
+                  "pm.test(\"Código NOT_FOUND\", () => { pm.expect(pm.response.json().error.code).to.eql(\"NOT_FOUND\"); });"
+                ]
+              }
+            }
+          ],
+          "request": {
+            "method": "GET",
+            "header": [],
+            "url": {
+              "raw": "{{baseUrl}}/itinerarios/{{idIti}}",
+              "host": [
+                "{{baseUrl}}"
+              ],
+              "path": [
+                "itinerarios",
+                "{{idIti}}"
+              ]
+            },
+            "auth": {
+              "type": "bearer",
+              "bearer": [
+                {
+                  "key": "token",
+                  "value": "{{tokenNuevo}}",
+                  "type": "string"
+                }
+              ]
+            }
+          }
+        },
+        {
+          "name": "Itinerario del nuevo sin punto de inicio",
+          "event": [
+            {
+              "listen": "test",
+              "script": {
+                "type": "text/javascript",
+                "exec": [
+                  "pm.test('Responde 201', () => pm.response.to.have.status(201));",
+                  "pm.test(\"Formato ok:true\", () => { pm.expect(pm.response.json().ok).to.eql(true); });",
+                  "pm.test(\"Guarda idItiNuevo\", () => { pm.collectionVariables.set('idItiNuevo', pm.response.json().data.id); });"
+                ]
+              }
+            }
+          ],
+          "request": {
+            "method": "POST",
+            "header": [
+              {
+                "key": "Content-Type",
+                "value": "application/json"
+              }
+            ],
+            "url": {
+              "raw": "{{baseUrl}}/itinerarios",
+              "host": [
+                "{{baseUrl}}"
+              ],
+              "path": [
+                "itinerarios"
+              ]
+            },
+            "auth": {
+              "type": "bearer",
+              "bearer": [
+                {
+                  "key": "token",
+                  "value": "{{tokenNuevo}}",
+                  "type": "string"
+                }
+              ]
+            },
+            "body": {
+              "mode": "raw",
+              "raw": "{\n  \"nombre\": \"Sin rumbo\"\n}",
+              "options": {
+                "raw": {
+                  "language": "json"
+                }
+              }
+            }
+          }
+        },
+        {
+          "name": "Parada con favorito de otra persona (trigger)",
+          "event": [
+            {
+              "listen": "test",
+              "script": {
+                "type": "text/javascript",
+                "exec": [
+                  "pm.test('Responde 422', () => pm.response.to.have.status(422));",
+                  "pm.test(\"Formato ok:false\", () => { pm.expect(pm.response.json().ok).to.eql(false); });",
+                  "pm.test(\"Código BUSINESS_RULE\", () => { pm.expect(pm.response.json().error.code).to.eql(\"BUSINESS_RULE\"); });"
+                ]
+              }
+            }
+          ],
+          "request": {
+            "method": "POST",
+            "header": [
+              {
+                "key": "Content-Type",
+                "value": "application/json"
+              }
+            ],
+            "url": {
+              "raw": "{{baseUrl}}/itinerarios/{{idItiNuevo}}/paradas",
+              "host": [
+                "{{baseUrl}}"
+              ],
+              "path": [
+                "itinerarios",
+                "{{idItiNuevo}}",
+                "paradas"
+              ]
+            },
+            "auth": {
+              "type": "bearer",
+              "bearer": [
+                {
+                  "key": "token",
+                  "value": "{{tokenNuevo}}",
+                  "type": "string"
+                }
+              ]
+            },
+            "body": {
+              "mode": "raw",
+              "raw": "{\n  \"favorito_id\": {{favPlaza}}\n}",
+              "options": {
+                "raw": {
+                  "language": "json"
+                }
+              }
+            }
+          }
+        },
+        {
+          "name": "Ordenar sin paradas",
+          "event": [
+            {
+              "listen": "test",
+              "script": {
+                "type": "text/javascript",
+                "exec": [
+                  "pm.test('Responde 422', () => pm.response.to.have.status(422));",
+                  "pm.test(\"Formato ok:false\", () => { pm.expect(pm.response.json().ok).to.eql(false); });",
+                  "pm.test(\"Código BUSINESS_RULE\", () => { pm.expect(pm.response.json().error.code).to.eql(\"BUSINESS_RULE\"); });"
+                ]
+              }
+            }
+          ],
+          "request": {
+            "method": "POST",
+            "header": [],
+            "url": {
+              "raw": "{{baseUrl}}/itinerarios/{{idItiNuevo}}/ordenar-ia",
+              "host": [
+                "{{baseUrl}}"
+              ],
+              "path": [
+                "itinerarios",
+                "{{idItiNuevo}}",
+                "ordenar-ia"
+              ]
+            },
+            "auth": {
+              "type": "bearer",
+              "bearer": [
+                {
+                  "key": "token",
+                  "value": "{{tokenNuevo}}",
+                  "type": "string"
+                }
+              ]
+            }
+          }
+        },
+        {
+          "name": "Parada propia en el itinerario del nuevo",
+          "event": [
+            {
+              "listen": "test",
+              "script": {
+                "type": "text/javascript",
+                "exec": [
+                  "pm.test('Responde 201', () => pm.response.to.have.status(201));",
+                  "pm.test(\"Formato ok:true\", () => { pm.expect(pm.response.json().ok).to.eql(true); });"
+                ]
+              }
+            }
+          ],
+          "request": {
+            "method": "POST",
+            "header": [
+              {
+                "key": "Content-Type",
+                "value": "application/json"
+              }
+            ],
+            "url": {
+              "raw": "{{baseUrl}}/itinerarios/{{idItiNuevo}}/paradas",
+              "host": [
+                "{{baseUrl}}"
+              ],
+              "path": [
+                "itinerarios",
+                "{{idItiNuevo}}",
+                "paradas"
+              ]
+            },
+            "auth": {
+              "type": "bearer",
+              "bearer": [
+                {
+                  "key": "token",
+                  "value": "{{tokenNuevo}}",
+                  "type": "string"
+                }
+              ]
+            },
+            "body": {
+              "mode": "raw",
+              "raw": "{\n  \"favorito_id\": {{favNuevo}}\n}",
+              "options": {
+                "raw": {
+                  "language": "json"
+                }
+              }
+            }
+          }
+        },
+        {
+          "name": "Ordenar sin punto de inicio",
+          "event": [
+            {
+              "listen": "test",
+              "script": {
+                "type": "text/javascript",
+                "exec": [
+                  "pm.test('Responde 422', () => pm.response.to.have.status(422));",
+                  "pm.test(\"Formato ok:false\", () => { pm.expect(pm.response.json().ok).to.eql(false); });",
+                  "pm.test(\"Pide el punto de inicio\", () => { pm.expect(pm.response.json().error.message).to.include('punto de inicio'); });"
+                ]
+              }
+            }
+          ],
+          "request": {
+            "method": "POST",
+            "header": [],
+            "url": {
+              "raw": "{{baseUrl}}/itinerarios/{{idItiNuevo}}/ordenar-ia",
+              "host": [
+                "{{baseUrl}}"
+              ],
+              "path": [
+                "itinerarios",
+                "{{idItiNuevo}}",
+                "ordenar-ia"
+              ]
+            },
+            "auth": {
+              "type": "bearer",
+              "bearer": [
+                {
+                  "key": "token",
+                  "value": "{{tokenNuevo}}",
+                  "type": "string"
+                }
+              ]
+            }
+          }
+        },
+        {
+          "name": "Ordenar con IA",
+          "event": [
+            {
+              "listen": "test",
+              "script": {
+                "type": "text/javascript",
+                "exec": [
+                  "pm.test('Responde 200', () => pm.response.to.have.status(200));",
+                  "pm.test(\"Formato ok:true\", () => { pm.expect(pm.response.json().ok).to.eql(true); });",
+                  "pm.test(\"Marcado como sugerido por IA\", () => { pm.expect(pm.response.json().data.sugerido_ia).to.eql(true); });",
+                  "pm.test(\"La Plaza (más cerca) pasa primero\", () => { pm.expect(pm.response.json().data.paradas[0].atractivo).to.eql(\"Plaza de Armas\"); });",
+                  "pm.test(\"Distancias de menor a mayor\", () => { const d = pm.response.json().data.paradas.map((p) => p.distancia_km); pm.expect(d).to.eql([...d].sort((x, y) => x - y)); });",
+                  "pm.test(\"Guarda paradaPlaza\", () => { pm.collectionVariables.set('paradaPlaza', pm.response.json().data.paradas[0].parada_id); });",
+                  "pm.test(\"Guarda paradaQenqo\", () => { pm.collectionVariables.set('paradaQenqo', pm.response.json().data.paradas[1].parada_id); });"
+                ]
+              }
+            }
+          ],
+          "request": {
+            "method": "POST",
+            "header": [],
+            "url": {
+              "raw": "{{baseUrl}}/itinerarios/{{idIti}}/ordenar-ia",
+              "host": [
+                "{{baseUrl}}"
+              ],
+              "path": [
+                "itinerarios",
+                "{{idIti}}",
+                "ordenar-ia"
+              ]
+            },
+            "auth": {
+              "type": "bearer",
+              "bearer": [
+                {
+                  "key": "token",
+                  "value": "{{tokenAna}}",
+                  "type": "string"
+                }
+              ]
+            }
+          }
+        },
+        {
+          "name": "Reseñar sin haber visitado (trigger)",
+          "event": [
+            {
+              "listen": "test",
+              "script": {
+                "type": "text/javascript",
+                "exec": [
+                  "pm.test('Responde 422', () => pm.response.to.have.status(422));",
+                  "pm.test(\"Formato ok:false\", () => { pm.expect(pm.response.json().ok).to.eql(false); });",
+                  "pm.test(\"Código BUSINESS_RULE\", () => { pm.expect(pm.response.json().error.code).to.eql(\"BUSINESS_RULE\"); });"
+                ]
+              }
+            }
+          ],
+          "request": {
+            "method": "POST",
+            "header": [
+              {
+                "key": "Content-Type",
+                "value": "application/json"
+              }
+            ],
+            "url": {
+              "raw": "{{baseUrl}}/itinerarios/{{idIti}}/resenas",
+              "host": [
+                "{{baseUrl}}"
+              ],
+              "path": [
+                "itinerarios",
+                "{{idIti}}",
+                "resenas"
+              ]
+            },
+            "auth": {
+              "type": "bearer",
+              "bearer": [
+                {
+                  "key": "token",
+                  "value": "{{tokenAna}}",
+                  "type": "string"
+                }
+              ]
+            },
+            "body": {
+              "mode": "raw",
+              "raw": "{\n  \"atractivo_id\": 5,\n  \"puntuacion\": 4\n}",
+              "options": {
+                "raw": {
+                  "language": "json"
+                }
+              }
+            }
+          }
+        },
+        {
+          "name": "Marcar Plaza como visitada",
+          "event": [
+            {
+              "listen": "test",
+              "script": {
+                "type": "text/javascript",
+                "exec": [
+                  "pm.test('Responde 200', () => pm.response.to.have.status(200));",
+                  "pm.test(\"Formato ok:true\", () => { pm.expect(pm.response.json().ok).to.eql(true); });",
+                  "pm.test(\"Visitada\", () => { pm.expect(pm.response.json().data.paradas[0].visitado).to.eql(true); });"
+                ]
+              }
+            }
+          ],
+          "request": {
+            "method": "PATCH",
+            "header": [],
+            "url": {
+              "raw": "{{baseUrl}}/itinerarios/{{idIti}}/paradas/{{paradaPlaza}}/visitado",
+              "host": [
+                "{{baseUrl}}"
+              ],
+              "path": [
+                "itinerarios",
+                "{{idIti}}",
+                "paradas",
+                "{{paradaPlaza}}",
+                "visitado"
+              ]
+            },
+            "auth": {
+              "type": "bearer",
+              "bearer": [
+                {
+                  "key": "token",
+                  "value": "{{tokenAna}}",
+                  "type": "string"
+                }
+              ]
+            }
+          }
+        },
+        {
+          "name": "Reseña con puntuación 6",
+          "event": [
+            {
+              "listen": "test",
+              "script": {
+                "type": "text/javascript",
+                "exec": [
+                  "pm.test('Responde 400', () => pm.response.to.have.status(400));",
+                  "pm.test(\"Formato ok:false\", () => { pm.expect(pm.response.json().ok).to.eql(false); });",
+                  "pm.test(\"Código VALIDATION_ERROR\", () => { pm.expect(pm.response.json().error.code).to.eql(\"VALIDATION_ERROR\"); });"
+                ]
+              }
+            }
+          ],
+          "request": {
+            "method": "POST",
+            "header": [
+              {
+                "key": "Content-Type",
+                "value": "application/json"
+              }
+            ],
+            "url": {
+              "raw": "{{baseUrl}}/itinerarios/{{idIti}}/resenas",
+              "host": [
+                "{{baseUrl}}"
+              ],
+              "path": [
+                "itinerarios",
+                "{{idIti}}",
+                "resenas"
+              ]
+            },
+            "auth": {
+              "type": "bearer",
+              "bearer": [
+                {
+                  "key": "token",
+                  "value": "{{tokenAna}}",
+                  "type": "string"
+                }
+              ]
+            },
+            "body": {
+              "mode": "raw",
+              "raw": "{\n  \"atractivo_id\": 5,\n  \"puntuacion\": 6\n}",
+              "options": {
+                "raw": {
+                  "language": "json"
+                }
+              }
+            }
+          }
+        },
+        {
+          "name": "Reseñar la Plaza",
+          "event": [
+            {
+              "listen": "test",
+              "script": {
+                "type": "text/javascript",
+                "exec": [
+                  "pm.test('Responde 201', () => pm.response.to.have.status(201));",
+                  "pm.test(\"Formato ok:true\", () => { pm.expect(pm.response.json().ok).to.eql(true); });",
+                  "pm.test(\"Calificación nueva 4\", () => { pm.expect(pm.response.json().data.nueva_calificacion).to.eql(4); });"
+                ]
+              }
+            }
+          ],
+          "request": {
+            "method": "POST",
+            "header": [
+              {
+                "key": "Content-Type",
+                "value": "application/json"
+              }
+            ],
+            "url": {
+              "raw": "{{baseUrl}}/itinerarios/{{idIti}}/resenas",
+              "host": [
+                "{{baseUrl}}"
+              ],
+              "path": [
+                "itinerarios",
+                "{{idIti}}",
+                "resenas"
+              ]
+            },
+            "auth": {
+              "type": "bearer",
+              "bearer": [
+                {
+                  "key": "token",
+                  "value": "{{tokenAna}}",
+                  "type": "string"
+                }
+              ]
+            },
+            "body": {
+              "mode": "raw",
+              "raw": "{\n  \"atractivo_id\": 5,\n  \"puntuacion\": 4,\n  \"comentario\": \"Había música en la pileta\"\n}",
+              "options": {
+                "raw": {
+                  "language": "json"
+                }
+              }
+            }
+          }
+        },
+        {
+          "name": "Reseña repetida",
+          "event": [
+            {
+              "listen": "test",
+              "script": {
+                "type": "text/javascript",
+                "exec": [
+                  "pm.test('Responde 409', () => pm.response.to.have.status(409));",
+                  "pm.test(\"Formato ok:false\", () => { pm.expect(pm.response.json().ok).to.eql(false); });",
+                  "pm.test(\"Código DUPLICATE\", () => { pm.expect(pm.response.json().error.code).to.eql(\"DUPLICATE\"); });"
+                ]
+              }
+            }
+          ],
+          "request": {
+            "method": "POST",
+            "header": [
+              {
+                "key": "Content-Type",
+                "value": "application/json"
+              }
+            ],
+            "url": {
+              "raw": "{{baseUrl}}/itinerarios/{{idIti}}/resenas",
+              "host": [
+                "{{baseUrl}}"
+              ],
+              "path": [
+                "itinerarios",
+                "{{idIti}}",
+                "resenas"
+              ]
+            },
+            "auth": {
+              "type": "bearer",
+              "bearer": [
+                {
+                  "key": "token",
+                  "value": "{{tokenAna}}",
+                  "type": "string"
+                }
+              ]
+            },
+            "body": {
+              "mode": "raw",
+              "raw": "{\n  \"atractivo_id\": 5,\n  \"puntuacion\": 5\n}",
+              "options": {
+                "raw": {
+                  "language": "json"
+                }
+              }
+            }
+          }
+        },
+        {
+          "name": "GET reseñas públicas de la Plaza",
+          "event": [
+            {
+              "listen": "test",
+              "script": {
+                "type": "text/javascript",
+                "exec": [
+                  "pm.test('Responde 200', () => pm.response.to.have.status(200));",
+                  "pm.test(\"Formato ok:true\", () => { pm.expect(pm.response.json().ok).to.eql(true); });",
+                  "pm.test(\"1 reseña\", () => { pm.expect(pm.response.json().meta.total).to.eql(1); });",
+                  "pm.test(\"Autora Ana\", () => { pm.expect(pm.response.json().data[0].autor).to.eql(\"Ana Quispe\"); });"
+                ]
+              }
+            }
+          ],
+          "request": {
+            "method": "GET",
+            "header": [],
+            "url": {
+              "raw": "{{baseUrl}}/atractivos/5/resenas",
+              "host": [
+                "{{baseUrl}}"
+              ],
+              "path": [
+                "atractivos",
+                "5",
+                "resenas"
+              ]
+            },
+            "auth": {
+              "type": "noauth"
+            }
+          }
+        },
+        {
+          "name": "Cambiar punto de inicio (deja de estar ordenado)",
+          "event": [
+            {
+              "listen": "test",
+              "script": {
+                "type": "text/javascript",
+                "exec": [
+                  "pm.test('Responde 200', () => pm.response.to.have.status(200));",
+                  "pm.test(\"Formato ok:true\", () => { pm.expect(pm.response.json().ok).to.eql(true); });",
+                  "pm.test(\"sugerido_ia vuelve a false\", () => { pm.expect(pm.response.json().data.sugerido_ia).to.eql(false); });"
+                ]
+              }
+            }
+          ],
+          "request": {
+            "method": "PUT",
+            "header": [
+              {
+                "key": "Content-Type",
+                "value": "application/json"
+              }
+            ],
+            "url": {
+              "raw": "{{baseUrl}}/itinerarios/{{idIti}}",
+              "host": [
+                "{{baseUrl}}"
+              ],
+              "path": [
+                "itinerarios",
+                "{{idIti}}"
+              ]
+            },
+            "auth": {
+              "type": "bearer",
+              "bearer": [
+                {
+                  "key": "token",
+                  "value": "{{tokenAna}}",
+                  "type": "string"
+                }
+              ]
+            },
+            "body": {
+              "mode": "raw",
+              "raw": "{\n  \"nombre\": \"Tarde de ruinas\",\n  \"latitud_inicio\": -13.5098,\n  \"longitud_inicio\": -71.9667\n}",
+              "options": {
+                "raw": {
+                  "language": "json"
+                }
+              }
+            }
+          }
+        },
+        {
+          "name": "Quitar parada Qenqo (compacta el orden)",
+          "event": [
+            {
+              "listen": "test",
+              "script": {
+                "type": "text/javascript",
+                "exec": [
+                  "pm.test('Responde 200', () => pm.response.to.have.status(200));",
+                  "pm.test(\"Formato ok:true\", () => { pm.expect(pm.response.json().ok).to.eql(true); });",
+                  "pm.test(\"Queda 1 parada\", () => { pm.expect(pm.response.json().data.paradas.length).to.eql(1); });",
+                  "pm.test(\"Con orden 1\", () => { pm.expect(pm.response.json().data.paradas[0].orden).to.eql(1); });",
+                  "pm.test(\"Costo 0\", () => { pm.expect(pm.response.json().data.costo_total).to.eql(0); });"
+                ]
+              }
+            }
+          ],
+          "request": {
+            "method": "DELETE",
+            "header": [],
+            "url": {
+              "raw": "{{baseUrl}}/itinerarios/{{idIti}}/paradas/{{paradaQenqo}}",
+              "host": [
+                "{{baseUrl}}"
+              ],
+              "path": [
+                "itinerarios",
+                "{{idIti}}",
+                "paradas",
+                "{{paradaQenqo}}"
+              ]
+            },
+            "auth": {
+              "type": "bearer",
+              "bearer": [
+                {
+                  "key": "token",
+                  "value": "{{tokenAna}}",
+                  "type": "string"
+                }
+              ]
+            }
+          }
+        },
+        {
+          "name": "DELETE /itinerarios/{{idIti}}",
+          "event": [
+            {
+              "listen": "test",
+              "script": {
+                "type": "text/javascript",
+                "exec": [
+                  "pm.test('Responde 204', () => pm.response.to.have.status(204));"
+                ]
+              }
+            }
+          ],
+          "request": {
+            "method": "DELETE",
+            "header": [],
+            "url": {
+              "raw": "{{baseUrl}}/itinerarios/{{idIti}}",
+              "host": [
+                "{{baseUrl}}"
+              ],
+              "path": [
+                "itinerarios",
+                "{{idIti}}"
+              ]
+            },
+            "auth": {
+              "type": "bearer",
+              "bearer": [
+                {
+                  "key": "token",
+                  "value": "{{tokenAna}}",
+                  "type": "string"
+                }
+              ]
+            }
+          }
+        },
+        {
+          "name": "La calificación de la Plaza se recalcula",
+          "event": [
+            {
+              "listen": "test",
+              "script": {
+                "type": "text/javascript",
+                "exec": [
+                  "pm.test('Responde 200', () => pm.response.to.have.status(200));",
+                  "pm.test(\"Formato ok:true\", () => { pm.expect(pm.response.json().ok).to.eql(true); });",
+                  "pm.test(\"Vuelve a 0\", () => { pm.expect(pm.response.json().data.calificacion).to.eql(0); });"
+                ]
+              }
+            }
+          ],
+          "request": {
+            "method": "GET",
+            "header": [],
+            "url": {
+              "raw": "{{baseUrl}}/atractivos/5",
+              "host": [
+                "{{baseUrl}}"
+              ],
+              "path": [
+                "atractivos",
+                "5"
+              ]
+            },
+            "auth": {
+              "type": "noauth"
+            }
+          }
+        }
+      ]
+    },
+    {
+      "name": "04 Asistente y preguntas frecuentes",
+      "description": "Búsqueda FULLTEXT; si no hay respuesta, sugiere preguntas.",
+      "item": [
+        {
+          "name": "Preguntar por el boleto",
+          "event": [
+            {
+              "listen": "test",
+              "script": {
+                "type": "text/javascript",
+                "exec": [
+                  "pm.test('Responde 200', () => pm.response.to.have.status(200));",
+                  "pm.test(\"Formato ok:true\", () => { pm.expect(pm.response.json().ok).to.eql(true); });",
+                  "pm.test(\"Encontrada\", () => { pm.expect(pm.response.json().data.encontrada).to.eql(true); });",
+                  "pm.test(\"Habla del precio\", () => { pm.expect(pm.response.json().data.respuesta).to.include('S/ 130'); });"
+                ]
+              }
+            }
+          ],
+          "request": {
+            "method": "POST",
+            "header": [
+              {
+                "key": "Content-Type",
+                "value": "application/json"
+              }
+            ],
+            "url": {
+              "raw": "{{baseUrl}}/asistente/preguntar",
+              "host": [
+                "{{baseUrl}}"
+              ],
+              "path": [
+                "asistente",
+                "preguntar"
+              ]
+            },
+            "auth": {
+              "type": "noauth"
+            },
+            "body": {
+              "mode": "raw",
+              "raw": "{\n  \"pregunta\": \"¿Cuánto cuesta el boleto turístico?\"\n}",
+              "options": {
+                "raw": {
+                  "language": "json"
+                }
+              }
+            }
+          }
+        },
+        {
+          "name": "Pregunta sin respuesta",
+          "event": [
+            {
+              "listen": "test",
+              "script": {
+                "type": "text/javascript",
+                "exec": [
+                  "pm.test('Responde 200', () => pm.response.to.have.status(200));",
+                  "pm.test(\"Formato ok:true\", () => { pm.expect(pm.response.json().ok).to.eql(true); });",
+                  "pm.test(\"No encontrada\", () => { pm.expect(pm.response.json().data.encontrada).to.eql(false); });",
+                  "pm.test(\"3 sugerencias\", () => { pm.expect(pm.response.json().data.sugerencias.length).to.eql(3); });"
+                ]
+              }
+            }
+          ],
+          "request": {
+            "method": "POST",
+            "header": [
+              {
+                "key": "Content-Type",
+                "value": "application/json"
+              }
+            ],
+            "url": {
+              "raw": "{{baseUrl}}/asistente/preguntar",
+              "host": [
+                "{{baseUrl}}"
+              ],
+              "path": [
+                "asistente",
+                "preguntar"
+              ]
+            },
+            "auth": {
+              "type": "noauth"
+            },
+            "body": {
+              "mode": "raw",
+              "raw": "{\n  \"pregunta\": \"xyzzy plutón\"\n}",
+              "options": {
+                "raw": {
+                  "language": "json"
+                }
+              }
+            }
+          }
+        },
+        {
+          "name": "Pregunta muy corta",
+          "event": [
+            {
+              "listen": "test",
+              "script": {
+                "type": "text/javascript",
+                "exec": [
+                  "pm.test('Responde 400', () => pm.response.to.have.status(400));",
+                  "pm.test(\"Formato ok:false\", () => { pm.expect(pm.response.json().ok).to.eql(false); });",
+                  "pm.test(\"Código VALIDATION_ERROR\", () => { pm.expect(pm.response.json().error.code).to.eql(\"VALIDATION_ERROR\"); });"
+                ]
+              }
+            }
+          ],
+          "request": {
+            "method": "POST",
+            "header": [
+              {
+                "key": "Content-Type",
+                "value": "application/json"
+              }
+            ],
+            "url": {
+              "raw": "{{baseUrl}}/asistente/preguntar",
+              "host": [
+                "{{baseUrl}}"
+              ],
+              "path": [
+                "asistente",
+                "preguntar"
+              ]
+            },
+            "auth": {
+              "type": "noauth"
+            },
+            "body": {
+              "mode": "raw",
+              "raw": "{\n  \"pregunta\": \"a\"\n}",
+              "options": {
+                "raw": {
+                  "language": "json"
+                }
+              }
+            }
+          }
+        },
+        {
+          "name": "GET /preguntas-frecuentes",
+          "event": [
+            {
+              "listen": "test",
+              "script": {
+                "type": "text/javascript",
+                "exec": [
+                  "pm.test('Responde 200', () => pm.response.to.have.status(200));",
+                  "pm.test(\"Formato ok:true\", () => { pm.expect(pm.response.json().ok).to.eql(true); });",
+                  "pm.test(\"8 preguntas\", () => { pm.expect(pm.response.json().data.length).to.eql(8); });"
+                ]
+              }
+            }
+          ],
+          "request": {
+            "method": "GET",
+            "header": [],
+            "url": {
+              "raw": "{{baseUrl}}/preguntas-frecuentes",
+              "host": [
+                "{{baseUrl}}"
+              ],
+              "path": [
+                "preguntas-frecuentes"
+              ]
+            },
+            "auth": {
+              "type": "noauth"
+            }
+          }
+        },
+        {
+          "name": "POST pregunta como turista",
+          "event": [
+            {
+              "listen": "test",
+              "script": {
+                "type": "text/javascript",
+                "exec": [
+                  "pm.test('Responde 403', () => pm.response.to.have.status(403));",
+                  "pm.test(\"Formato ok:false\", () => { pm.expect(pm.response.json().ok).to.eql(false); });"
+                ]
+              }
+            }
+          ],
+          "request": {
+            "method": "POST",
+            "header": [
+              {
+                "key": "Content-Type",
+                "value": "application/json"
+              }
+            ],
+            "url": {
+              "raw": "{{baseUrl}}/preguntas-frecuentes",
+              "host": [
+                "{{baseUrl}}"
+              ],
+              "path": [
+                "preguntas-frecuentes"
+              ]
+            },
+            "auth": {
+              "type": "bearer",
+              "bearer": [
+                {
+                  "key": "token",
+                  "value": "{{tokenAna}}",
+                  "type": "string"
+                }
+              ]
+            },
+            "body": {
+              "mode": "raw",
+              "raw": "{\n  \"pregunta\": \"¿Hay wifi?\",\n  \"respuesta\": \"No\"\n}",
+              "options": {
+                "raw": {
+                  "language": "json"
+                }
+              }
+            }
+          }
+        },
+        {
+          "name": "POST pregunta (admin)",
+          "event": [
+            {
+              "listen": "test",
+              "script": {
+                "type": "text/javascript",
+                "exec": [
+                  "pm.test('Responde 201', () => pm.response.to.have.status(201));",
+                  "pm.test(\"Formato ok:true\", () => { pm.expect(pm.response.json().ok).to.eql(true); });",
+                  "pm.test(\"Guarda idPregunta\", () => { pm.collectionVariables.set('idPregunta', pm.response.json().data.id); });"
+                ]
+              }
+            }
+          ],
+          "request": {
+            "method": "POST",
+            "header": [
+              {
+                "key": "Content-Type",
+                "value": "application/json"
+              }
+            ],
+            "url": {
+              "raw": "{{baseUrl}}/preguntas-frecuentes",
+              "host": [
+                "{{baseUrl}}"
+              ],
+              "path": [
+                "preguntas-frecuentes"
+              ]
+            },
+            "auth": {
+              "type": "bearer",
+              "bearer": [
+                {
+                  "key": "token",
+                  "value": "{{tokenAdmin}}",
+                  "type": "string"
+                }
+              ]
+            },
+            "body": {
+              "mode": "raw",
+              "raw": "{\n  \"pregunta\": \"¿Hay wifi en Moray?\",\n  \"respuesta\": \"No, lleva datos móviles.\",\n  \"palabras_clave\": \"wifi internet señal\",\n  \"atractivo_id\": 13\n}",
+              "options": {
+                "raw": {
+                  "language": "json"
+                }
+              }
+            }
+          }
+        },
+        {
+          "name": "El asistente ya la responde",
+          "event": [
+            {
+              "listen": "test",
+              "script": {
+                "type": "text/javascript",
+                "exec": [
+                  "pm.test('Responde 200', () => pm.response.to.have.status(200));",
+                  "pm.test(\"Formato ok:true\", () => { pm.expect(pm.response.json().ok).to.eql(true); });",
+                  "pm.test(\"Responde la nueva\", () => { pm.expect(pm.response.json().data.respuesta).to.include('datos móviles'); });"
+                ]
+              }
+            }
+          ],
+          "request": {
+            "method": "POST",
+            "header": [
+              {
+                "key": "Content-Type",
+                "value": "application/json"
+              }
+            ],
+            "url": {
+              "raw": "{{baseUrl}}/asistente/preguntar",
+              "host": [
+                "{{baseUrl}}"
+              ],
+              "path": [
+                "asistente",
+                "preguntar"
+              ]
+            },
+            "auth": {
+              "type": "noauth"
+            },
+            "body": {
+              "mode": "raw",
+              "raw": "{\n  \"pregunta\": \"hay wifi o internet en moray\"\n}",
+              "options": {
+                "raw": {
+                  "language": "json"
+                }
+              }
+            }
+          }
+        },
+        {
+          "name": "PUT pregunta con atractivo inexistente",
+          "event": [
+            {
+              "listen": "test",
+              "script": {
+                "type": "text/javascript",
+                "exec": [
+                  "pm.test('Responde 404', () => pm.response.to.have.status(404));",
+                  "pm.test(\"Formato ok:false\", () => { pm.expect(pm.response.json().ok).to.eql(false); });",
+                  "pm.test(\"Código NOT_FOUND\", () => { pm.expect(pm.response.json().error.code).to.eql(\"NOT_FOUND\"); });"
+                ]
+              }
+            }
+          ],
+          "request": {
+            "method": "PUT",
+            "header": [
+              {
+                "key": "Content-Type",
+                "value": "application/json"
+              }
+            ],
+            "url": {
+              "raw": "{{baseUrl}}/preguntas-frecuentes/{{idPregunta}}",
+              "host": [
+                "{{baseUrl}}"
+              ],
+              "path": [
+                "preguntas-frecuentes",
+                "{{idPregunta}}"
+              ]
+            },
+            "auth": {
+              "type": "bearer",
+              "bearer": [
+                {
+                  "key": "token",
+                  "value": "{{tokenAdmin}}",
+                  "type": "string"
+                }
+              ]
+            },
+            "body": {
+              "mode": "raw",
+              "raw": "{\n  \"pregunta\": \"¿Hay wifi en Moray?\",\n  \"respuesta\": \"No.\",\n  \"atractivo_id\": 999\n}",
+              "options": {
+                "raw": {
+                  "language": "json"
+                }
+              }
+            }
+          }
+        },
+        {
+          "name": "DELETE pregunta",
+          "event": [
+            {
+              "listen": "test",
+              "script": {
+                "type": "text/javascript",
+                "exec": [
+                  "pm.test('Responde 204', () => pm.response.to.have.status(204));"
+                ]
+              }
+            }
+          ],
+          "request": {
+            "method": "DELETE",
+            "header": [],
+            "url": {
+              "raw": "{{baseUrl}}/preguntas-frecuentes/{{idPregunta}}",
+              "host": [
+                "{{baseUrl}}"
+              ],
+              "path": [
+                "preguntas-frecuentes",
+                "{{idPregunta}}"
+              ]
+            },
+            "auth": {
+              "type": "bearer",
+              "bearer": [
+                {
+                  "key": "token",
+                  "value": "{{tokenAdmin}}",
+                  "type": "string"
+                }
+              ]
+            }
+          }
+        },
+        {
+          "name": "DELETE pregunta otra vez",
+          "event": [
+            {
+              "listen": "test",
+              "script": {
+                "type": "text/javascript",
+                "exec": [
+                  "pm.test('Responde 404', () => pm.response.to.have.status(404));",
+                  "pm.test(\"Formato ok:false\", () => { pm.expect(pm.response.json().ok).to.eql(false); });"
+                ]
+              }
+            }
+          ],
+          "request": {
+            "method": "DELETE",
+            "header": [],
+            "url": {
+              "raw": "{{baseUrl}}/preguntas-frecuentes/{{idPregunta}}",
+              "host": [
+                "{{baseUrl}}"
+              ],
+              "path": [
+                "preguntas-frecuentes",
+                "{{idPregunta}}"
+              ]
+            },
+            "auth": {
+              "type": "bearer",
+              "bearer": [
+                {
+                  "key": "token",
+                  "value": "{{tokenAdmin}}",
+                  "type": "string"
+                }
+              ]
+            }
+          }
+        }
+      ]
+    },
+    {
+      "name": "05 Administración",
+      "description": "Usuarios y moderación de reseñas (solo ADMIN).",
+      "item": [
+        {
+          "name": "GET /usuarios",
+          "event": [
+            {
+              "listen": "test",
+              "script": {
+                "type": "text/javascript",
+                "exec": [
+                  "pm.test('Responde 200', () => pm.response.to.have.status(200));",
+                  "pm.test(\"Formato ok:true\", () => { pm.expect(pm.response.json().ok).to.eql(true); });",
+                  "pm.test(\"3 usuarios\", () => { pm.expect(pm.response.json().meta.total).to.eql(3); });"
+                ]
+              }
+            }
+          ],
+          "request": {
+            "method": "GET",
+            "header": [],
+            "url": {
+              "raw": "{{baseUrl}}/usuarios",
+              "host": [
+                "{{baseUrl}}"
+              ],
+              "path": [
+                "usuarios"
+              ]
+            },
+            "auth": {
+              "type": "bearer",
+              "bearer": [
+                {
+                  "key": "token",
+                  "value": "{{tokenAdmin}}",
+                  "type": "string"
+                }
+              ]
+            }
+          }
+        },
+        {
+          "name": "GET /usuarios?buscar=ana",
+          "event": [
+            {
+              "listen": "test",
+              "script": {
+                "type": "text/javascript",
+                "exec": [
+                  "pm.test('Responde 200', () => pm.response.to.have.status(200));",
+                  "pm.test(\"Formato ok:true\", () => { pm.expect(pm.response.json().ok).to.eql(true); });",
+                  "pm.test(\"Encuentra a Ana\", () => { pm.expect(pm.response.json().data[0].correo).to.eql(\"ana@mail.com\"); });"
+                ]
+              }
+            }
+          ],
+          "request": {
+            "method": "GET",
+            "header": [],
+            "url": {
+              "raw": "{{baseUrl}}/usuarios?buscar=ana",
+              "host": [
+                "{{baseUrl}}"
+              ],
+              "path": [
+                "usuarios"
+              ],
+              "query": [
+                {
+                  "key": "buscar",
+                  "value": "ana"
+                }
+              ]
+            },
+            "auth": {
+              "type": "bearer",
+              "bearer": [
+                {
+                  "key": "token",
+                  "value": "{{tokenAdmin}}",
+                  "type": "string"
+                }
+              ]
+            }
+          }
+        },
+        {
+          "name": "GET /usuarios como turista",
+          "event": [
+            {
+              "listen": "test",
+              "script": {
+                "type": "text/javascript",
+                "exec": [
+                  "pm.test('Responde 403', () => pm.response.to.have.status(403));",
+                  "pm.test(\"Formato ok:false\", () => { pm.expect(pm.response.json().ok).to.eql(false); });",
+                  "pm.test(\"Código FORBIDDEN\", () => { pm.expect(pm.response.json().error.code).to.eql(\"FORBIDDEN\"); });"
+                ]
+              }
+            }
+          ],
+          "request": {
+            "method": "GET",
+            "header": [],
+            "url": {
+              "raw": "{{baseUrl}}/usuarios",
+              "host": [
+                "{{baseUrl}}"
+              ],
+              "path": [
+                "usuarios"
+              ]
+            },
+            "auth": {
+              "type": "bearer",
+              "bearer": [
+                {
+                  "key": "token",
+                  "value": "{{tokenAna}}",
+                  "type": "string"
+                }
+              ]
+            }
+          }
+        },
+        {
+          "name": "PATCH rol inválido",
+          "event": [
+            {
+              "listen": "test",
+              "script": {
+                "type": "text/javascript",
+                "exec": [
+                  "pm.test('Responde 400', () => pm.response.to.have.status(400));",
+                  "pm.test(\"Formato ok:false\", () => { pm.expect(pm.response.json().ok).to.eql(false); });",
+                  "pm.test(\"Código VALIDATION_ERROR\", () => { pm.expect(pm.response.json().error.code).to.eql(\"VALIDATION_ERROR\"); });"
+                ]
+              }
+            }
+          ],
+          "request": {
+            "method": "PATCH",
+            "header": [
+              {
+                "key": "Content-Type",
+                "value": "application/json"
+              }
+            ],
+            "url": {
+              "raw": "{{baseUrl}}/usuarios/{{idNuevo}}/rol",
+              "host": [
+                "{{baseUrl}}"
+              ],
+              "path": [
+                "usuarios",
+                "{{idNuevo}}",
+                "rol"
+              ]
+            },
+            "auth": {
+              "type": "bearer",
+              "bearer": [
+                {
+                  "key": "token",
+                  "value": "{{tokenAdmin}}",
+                  "type": "string"
+                }
+              ]
+            },
+            "body": {
+              "mode": "raw",
+              "raw": "{\n  \"rol\": \"JEFE\"\n}",
+              "options": {
+                "raw": {
+                  "language": "json"
+                }
+              }
+            }
+          }
+        },
+        {
+          "name": "PATCH rol del nuevo a ADMIN",
+          "event": [
+            {
+              "listen": "test",
+              "script": {
+                "type": "text/javascript",
+                "exec": [
+                  "pm.test('Responde 200', () => pm.response.to.have.status(200));",
+                  "pm.test(\"Formato ok:true\", () => { pm.expect(pm.response.json().ok).to.eql(true); });",
+                  "pm.test(\"Ahora ADMIN\", () => { pm.expect(pm.response.json().data.rol).to.eql(\"ADMIN\"); });"
+                ]
+              }
+            }
+          ],
+          "request": {
+            "method": "PATCH",
+            "header": [
+              {
+                "key": "Content-Type",
+                "value": "application/json"
+              }
+            ],
+            "url": {
+              "raw": "{{baseUrl}}/usuarios/{{idNuevo}}/rol",
+              "host": [
+                "{{baseUrl}}"
+              ],
+              "path": [
+                "usuarios",
+                "{{idNuevo}}",
+                "rol"
+              ]
+            },
+            "auth": {
+              "type": "bearer",
+              "bearer": [
+                {
+                  "key": "token",
+                  "value": "{{tokenAdmin}}",
+                  "type": "string"
+                }
+              ]
+            },
+            "body": {
+              "mode": "raw",
+              "raw": "{\n  \"rol\": \"ADMIN\"\n}",
+              "options": {
+                "raw": {
+                  "language": "json"
+                }
+              }
+            }
+          }
+        },
+        {
+          "name": "El admin no se quita su propio rol",
+          "event": [
+            {
+              "listen": "test",
+              "script": {
+                "type": "text/javascript",
+                "exec": [
+                  "pm.test('Responde 422', () => pm.response.to.have.status(422));",
+                  "pm.test(\"Formato ok:false\", () => { pm.expect(pm.response.json().ok).to.eql(false); });",
+                  "pm.test(\"Código BUSINESS_RULE\", () => { pm.expect(pm.response.json().error.code).to.eql(\"BUSINESS_RULE\"); });"
+                ]
+              }
+            }
+          ],
+          "request": {
+            "method": "PATCH",
+            "header": [
+              {
+                "key": "Content-Type",
+                "value": "application/json"
+              }
+            ],
+            "url": {
+              "raw": "{{baseUrl}}/usuarios/1/rol",
+              "host": [
+                "{{baseUrl}}"
+              ],
+              "path": [
+                "usuarios",
+                "1",
+                "rol"
+              ]
+            },
+            "auth": {
+              "type": "bearer",
+              "bearer": [
+                {
+                  "key": "token",
+                  "value": "{{tokenAdmin}}",
+                  "type": "string"
+                }
+              ]
+            },
+            "body": {
+              "mode": "raw",
+              "raw": "{\n  \"rol\": \"TURISTA\"\n}",
+              "options": {
+                "raw": {
+                  "language": "json"
+                }
+              }
+            }
+          }
+        },
+        {
+          "name": "El admin no se elimina a sí mismo",
+          "event": [
+            {
+              "listen": "test",
+              "script": {
+                "type": "text/javascript",
+                "exec": [
+                  "pm.test('Responde 422', () => pm.response.to.have.status(422));",
+                  "pm.test(\"Formato ok:false\", () => { pm.expect(pm.response.json().ok).to.eql(false); });",
+                  "pm.test(\"Código BUSINESS_RULE\", () => { pm.expect(pm.response.json().error.code).to.eql(\"BUSINESS_RULE\"); });"
+                ]
+              }
+            }
+          ],
+          "request": {
+            "method": "DELETE",
+            "header": [],
+            "url": {
+              "raw": "{{baseUrl}}/usuarios/1",
+              "host": [
+                "{{baseUrl}}"
+              ],
+              "path": [
+                "usuarios",
+                "1"
+              ]
+            },
+            "auth": {
+              "type": "bearer",
+              "bearer": [
+                {
+                  "key": "token",
+                  "value": "{{tokenAdmin}}",
+                  "type": "string"
+                }
+              ]
+            }
+          }
+        },
+        {
+          "name": "Moderar reseña como turista",
+          "event": [
+            {
+              "listen": "test",
+              "script": {
+                "type": "text/javascript",
+                "exec": [
+                  "pm.test('Responde 403', () => pm.response.to.have.status(403));",
+                  "pm.test(\"Formato ok:false\", () => { pm.expect(pm.response.json().ok).to.eql(false); });"
+                ]
+              }
+            }
+          ],
+          "request": {
+            "method": "DELETE",
+            "header": [],
+            "url": {
+              "raw": "{{baseUrl}}/resenas/1",
+              "host": [
+                "{{baseUrl}}"
+              ],
+              "path": [
+                "resenas",
+                "1"
+              ]
+            },
+            "auth": {
+              "type": "bearer",
+              "bearer": [
+                {
+                  "key": "token",
+                  "value": "{{tokenAna}}",
+                  "type": "string"
+                }
+              ]
+            }
+          }
+        },
+        {
+          "name": "Moderar (borrar) reseña de la Catedral",
+          "event": [
+            {
+              "listen": "test",
+              "script": {
+                "type": "text/javascript",
+                "exec": [
+                  "pm.test('Responde 204', () => pm.response.to.have.status(204));"
+                ]
+              }
+            }
+          ],
+          "request": {
+            "method": "DELETE",
+            "header": [],
+            "url": {
+              "raw": "{{baseUrl}}/resenas/1",
+              "host": [
+                "{{baseUrl}}"
+              ],
+              "path": [
+                "resenas",
+                "1"
+              ]
+            },
+            "auth": {
+              "type": "bearer",
+              "bearer": [
+                {
+                  "key": "token",
+                  "value": "{{tokenAdmin}}",
+                  "type": "string"
+                }
+              ]
+            }
+          }
+        },
+        {
+          "name": "La Catedral recalcula su calificación",
+          "event": [
+            {
+              "listen": "test",
+              "script": {
+                "type": "text/javascript",
+                "exec": [
+                  "pm.test('Responde 200', () => pm.response.to.have.status(200));",
+                  "pm.test(\"Formato ok:true\", () => { pm.expect(pm.response.json().ok).to.eql(true); });",
+                  "pm.test(\"Vuelve a 0\", () => { pm.expect(pm.response.json().data.calificacion).to.eql(0); });"
+                ]
+              }
+            }
+          ],
+          "request": {
+            "method": "GET",
+            "header": [],
+            "url": {
+              "raw": "{{baseUrl}}/atractivos/3",
+              "host": [
+                "{{baseUrl}}"
+              ],
+              "path": [
+                "atractivos",
+                "3"
+              ]
+            },
+            "auth": {
+              "type": "noauth"
+            }
+          }
+        },
+        {
+          "name": "DELETE /resenas/999",
+          "event": [
+            {
+              "listen": "test",
+              "script": {
+                "type": "text/javascript",
+                "exec": [
+                  "pm.test('Responde 404', () => pm.response.to.have.status(404));",
+                  "pm.test(\"Formato ok:false\", () => { pm.expect(pm.response.json().ok).to.eql(false); });"
+                ]
+              }
+            }
+          ],
+          "request": {
+            "method": "DELETE",
+            "header": [],
+            "url": {
+              "raw": "{{baseUrl}}/resenas/999",
+              "host": [
+                "{{baseUrl}}"
+              ],
+              "path": [
+                "resenas",
+                "999"
+              ]
+            },
+            "auth": {
+              "type": "bearer",
+              "bearer": [
+                {
+                  "key": "token",
+                  "value": "{{tokenAdmin}}",
+                  "type": "string"
+                }
+              ]
+            }
+          }
+        },
+        {
+          "name": "DELETE usuario nuevo",
+          "event": [
+            {
+              "listen": "test",
+              "script": {
+                "type": "text/javascript",
+                "exec": [
+                  "pm.test('Responde 204', () => pm.response.to.have.status(204));"
+                ]
+              }
+            }
+          ],
+          "request": {
+            "method": "DELETE",
+            "header": [],
+            "url": {
+              "raw": "{{baseUrl}}/usuarios/{{idNuevo}}",
+              "host": [
+                "{{baseUrl}}"
+              ],
+              "path": [
+                "usuarios",
+                "{{idNuevo}}"
+              ]
+            },
+            "auth": {
+              "type": "bearer",
+              "bearer": [
+                {
+                  "key": "token",
+                  "value": "{{tokenAdmin}}",
+                  "type": "string"
+                }
+              ]
+            }
+          }
+        },
+        {
+          "name": "DELETE usuario nuevo otra vez",
+          "event": [
+            {
+              "listen": "test",
+              "script": {
+                "type": "text/javascript",
+                "exec": [
+                  "pm.test('Responde 404', () => pm.response.to.have.status(404));",
+                  "pm.test(\"Formato ok:false\", () => { pm.expect(pm.response.json().ok).to.eql(false); });"
+                ]
+              }
+            }
+          ],
+          "request": {
+            "method": "DELETE",
+            "header": [],
+            "url": {
+              "raw": "{{baseUrl}}/usuarios/{{idNuevo}}",
+              "host": [
+                "{{baseUrl}}"
+              ],
+              "path": [
+                "usuarios",
+                "{{idNuevo}}"
+              ]
+            },
+            "auth": {
+              "type": "bearer",
+              "bearer": [
+                {
+                  "key": "token",
+                  "value": "{{tokenAdmin}}",
+                  "type": "string"
+                }
+              ]
+            }
+          }
+        }
+      ]
+    },
+    {
+      "name": "06 Seguridad",
+      "description": "Errores generales y límite de intentos. El 429 bloquea el login 15 minutos: reinicia la API antes de volver a correr la colección.",
+      "item": [
+        {
+          "name": "JSON mal formado",
+          "event": [
+            {
+              "listen": "test",
+              "script": {
+                "type": "text/javascript",
+                "exec": [
+                  "pm.test('Responde 400', () => pm.response.to.have.status(400));",
+                  "pm.test(\"Formato ok:false\", () => { pm.expect(pm.response.json().ok).to.eql(false); });",
+                  "pm.test(\"Código INVALID_JSON\", () => { pm.expect(pm.response.json().error.code).to.eql(\"INVALID_JSON\"); });"
+                ]
+              }
+            }
+          ],
+          "request": {
+            "method": "POST",
+            "header": [
+              {
+                "key": "Content-Type",
+                "value": "application/json"
+              }
+            ],
+            "url": {
+              "raw": "{{baseUrl}}/auth/login",
+              "host": [
+                "{{baseUrl}}"
+              ],
+              "path": [
+                "auth",
+                "login"
+              ]
+            },
+            "auth": {
+              "type": "noauth"
+            },
+            "body": {
+              "mode": "raw",
+              "raw": "{\"correo\": ",
+              "options": {
+                "raw": {
+                  "language": "json"
+                }
+              }
+            }
+          }
+        },
+        {
+          "name": "Ruta inexistente",
+          "event": [
+            {
+              "listen": "test",
+              "script": {
+                "type": "text/javascript",
+                "exec": [
+                  "pm.test('Responde 404', () => pm.response.to.have.status(404));",
+                  "pm.test(\"Formato ok:false\", () => { pm.expect(pm.response.json().ok).to.eql(false); });",
+                  "pm.test(\"Código NOT_FOUND\", () => { pm.expect(pm.response.json().error.code).to.eql(\"NOT_FOUND\"); });"
+                ]
+              }
+            }
+          ],
+          "request": {
+            "method": "GET",
+            "header": [],
+            "url": {
+              "raw": "{{baseUrl}}/no-existe",
+              "host": [
+                "{{baseUrl}}"
+              ],
+              "path": [
+                "no-existe"
+              ]
+            },
+            "auth": {
+              "type": "noauth"
+            }
+          }
+        },
+        {
+          "name": "Login tras muchos intentos (429)",
+          "event": [
+            {
+              "listen": "test",
+              "script": {
+                "type": "text/javascript",
+                "exec": [
+                  "pm.test('Responde 429', () => pm.response.to.have.status(429));",
+                  "pm.test(\"Formato ok:false\", () => { pm.expect(pm.response.json().ok).to.eql(false); });",
+                  "pm.test(\"Código TOO_MANY_REQUESTS\", () => { pm.expect(pm.response.json().error.code).to.eql(\"TOO_MANY_REQUESTS\"); });"
+                ]
+              }
+            },
+            {
+              "listen": "prerequest",
+              "script": {
+                "type": "text/javascript",
+                "exec": [
+                  "// Agota el límite (20 intentos / 15 min) enviando 20 logins fallidos antes de esta petición",
+                  "const url = pm.collectionVariables.get('baseUrl') + '/auth/login';",
+                  "for (let i = 0; i < 20; i++) {",
+                  "  pm.sendRequest({ url, method: 'POST', header: { 'Content-Type': 'application/json' },",
+                  "    body: { mode: 'raw', raw: JSON.stringify({ correo: 'admin@cuscosmart.pe', contrasena: 'mala' }) } }, () => {});",
+                  "}"
+                ]
+              }
+            }
+          ],
+          "request": {
+            "method": "POST",
+            "header": [
+              {
+                "key": "Content-Type",
+                "value": "application/json"
+              }
+            ],
+            "url": {
+              "raw": "{{baseUrl}}/auth/login",
+              "host": [
+                "{{baseUrl}}"
+              ],
+              "path": [
+                "auth",
+                "login"
+              ]
+            },
+            "auth": {
+              "type": "noauth"
+            },
+            "body": {
+              "mode": "raw",
+              "raw": "{\n  \"correo\": \"admin@cuscosmart.pe\",\n  \"contrasena\": \"mala\"\n}",
+              "options": {
+                "raw": {
+                  "language": "json"
+                }
+              }
+            }
+          }
+        }
+      ]
+    }
+  ]
+}
