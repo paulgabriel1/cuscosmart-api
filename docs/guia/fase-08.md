@@ -9,7 +9,7 @@
 ## 8.1 La colección de Postman
 
 - **Generador:** `scripts/generarPostman.js`. Escribimos las pruebas en JavaScript y él arma el JSON de Postman.
-- **Resultado:** `postman/cuscosmart.collection.json`, con **107 peticiones** y **326 pruebas automáticas** en 7 carpetas.
+- **Resultado:** `postman/cuscosmart.collection.json`, con **116 peticiones** y **353 pruebas automáticas** en 7 carpetas.
 
 | Carpeta | Qué prueba |
 | --- | --- |
@@ -28,7 +28,7 @@
 ```powershell
 npm run db:reset        # datos limpios (la colección modifica datos)
 # reinicia la API: Ctrl + C y npm run dev   (la última prueba bloquea el login 15 min)
-npm run test:api        # 107 peticiones · 326 pruebas · 0 fallidas
+npm run test:api        # 116 peticiones · 353 pruebas · 0 fallidas
 ```
 
 O en Postman: **Import** → `postman/cuscosmart.collection.json` → clic derecho → **Run collection**.
@@ -47,7 +47,7 @@ O en Postman: **Import** → `postman/cuscosmart.collection.json` → clic derec
 ## 🎓 Preguntas del profesor
 
 **1. ¿Cómo saben que todo funciona?**
-> Con 326 pruebas automáticas que revisan el código de estado, el formato y los datos de cada respuesta, incluidos los casos de error. Se corren con un comando después de cada cambio.
+> Con 353 pruebas automáticas que revisan el código de estado, el formato y los datos de cada respuesta, incluidos los casos de error. Se corren con un comando después de cada cambio.
 
 **2. ¿Qué diferencia hay entre Swagger y Postman?**
 > Swagger **documenta** la API: qué rutas hay, qué reciben y qué devuelven, y permite probarlas desde el navegador. Postman **prueba** la API de forma repetible, con aserciones automáticas.

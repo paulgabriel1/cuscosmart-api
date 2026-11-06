@@ -13,7 +13,7 @@ function firmarToken(usuario) {
   return jwt.sign(
     { sub: usuario.id, rol: usuario.rol, nombre: usuario.nombre_completo },
     env.jwt.secret,
-    { expiresIn: env.jwt.expiresIn },
+    { expiresIn: env.jwt.expiresIn, algorithm: 'HS256' },
   );
 }
 

@@ -29,7 +29,7 @@ Guía turística inteligente del Cusco: atractivos con mapa, favoritos, **itiner
 | Autenticación | JWT (jsonwebtoken) + bcryptjs |
 | Seguridad | helmet, cors, express-rate-limit |
 | Documentación | Swagger (OpenAPI 3) en `/api/v1/docs` |
-| Pruebas | Colección Postman con 326 pruebas automáticas |
+| Pruebas | Colección Postman con 353 pruebas automáticas |
 
 ## Arquitectura
 
@@ -152,15 +152,15 @@ Cada regla dice **dónde vive**, porque es ahí donde se cambia.
 | RN-06 | La hora de cierre es posterior a la de apertura | `sp_agregar_horario` (45000) |
 | RN-07 | Un atractivo está una sola vez en los favoritos de cada turista | `sp_agregar_favorito` (45409) + `UNIQUE uq_favorito` |
 | RN-08 | Cada turista solo ve y modifica sus favoritos, itinerarios y reseñas; lo ajeno responde 404 | `usuario_id` del token + `sp_validar_itinerario` |
-| RN-09 | Las paradas se arman solo con favoritos del dueño del itinerario | Trigger `trg_detalle_valida` |
+| RN-09 | Las paradas se arman solo con favoritos del dueño del itinerario (uno ajeno responde 404) | `sp_agregar_parada` + trigger `trg_detalle_valida` |
 | RN-10 | Un lugar aparece una sola vez por itinerario | `sp_agregar_parada` (45409) + `UNIQUE uq_detalle_favorito` |
-| RN-11 | La duración, el costo, el orden y el costo de cada parada los calcula el sistema | `sp_agregar_parada`, `sp_actualizar_totales`, `sp_quitar_parada` |
-| RN-12 | Ordenar con IA exige un punto de inicio y al menos una parada. El orden va por distancia (Haversine), y al agregar paradas o cambiar el punto, `sugerido_ia` vuelve a 0 | `sp_ordenar_itinerario_ia`, `fn_distancia_km` |
+| RN-11 | La duración, el costo, el orden y el costo de cada parada los calcula el sistema; al quitar paradas (también en cascada) el orden se vuelve a numerar | `sp_agregar_parada`, `sp_actualizar_totales`, `sp_quitar_parada`, `sp_recalcular_itinerarios` |
+| RN-12 | Ordenar con IA exige un punto de inicio (dentro del Perú) y al menos una parada. El orden va por distancia (Haversine), y las paradas sin coordenadas van al final. Al agregar paradas, cambiar el punto o mover un atractivo, `sugerido_ia` vuelve a 0 | `sp_ordenar_itinerario_ia`, `fn_distancia_km`, `sp_actualizar_itinerario`, `sp_actualizar_atractivo` |
 | RN-13 | Solo se reseña un lugar que está en el itinerario y fue **visitado** (anti reseñas falsas) | Trigger `trg_resena_valida` |
-| RN-14 | Una reseña por lugar en cada viaje; puntuación de 1 a 5 | `UNIQUE uq_resena` + `CHECK` + `sp_registrar_resena` + zod |
+| RN-14 | **Una reseña por turista y atractivo** (aunque lo visite en varios viajes, para que nadie infle la calificación); puntuación de 1 a 5 | `sp_registrar_resena` + `UNIQUE uq_resena` + `CHECK` + zod |
 | RN-15 | La calificación es el promedio de las reseñas y se recalcula sola, también al borrar itinerarios o usuarios | Triggers `trg_resena_calificacion_*` + `sp_eliminar_itinerario` / `sp_eliminar_usuario` |
-| RN-16 | El ADMIN no puede quitarse su propio rol ni eliminar su cuenta | `admin.service.js` |
-| RN-17 | Límites: 20 logins o registros cada 15 min y 20 preguntas al asistente por minuto | `limitadores.js` |
+| RN-16 | El ADMIN no puede quitarse su propio rol ni eliminar su cuenta. Si a alguien le quitan el rol o la cuenta, pierde el acceso al instante (el rol se lee de la base en cada petición) | `admin.service.js`, `authenticate` |
+| RN-17 | Límites: 300 peticiones por minuto en toda la API, 20 logins o registros cada 15 min y 20 preguntas al asistente por minuto | `limitadores.js` |
 | RN-18 | El asistente no guarda lo que preguntan los usuarios | `sp_buscar_pregunta_frecuente` (solo lectura) |
 
 ### ¿Cómo se cambia una regla de negocio?
@@ -196,7 +196,7 @@ Cada regla dice **dónde vive**, porque es ahí donde se cambia.
 ```powershell
 npm run db:reset     # datos limpios
 npm run dev          # (en otra ventana) API recién iniciada
-npm run test:api     # 107 peticiones · 326 pruebas
+npm run test:api     # 116 peticiones · 353 pruebas
 ```
 
 En Postman: **Import** → `postman/cuscosmart.collection.json` → **Run collection**. La colección ya trae la URL y guarda sola los tokens y los IDs.
@@ -205,11 +205,18 @@ En Postman: **Import** → `postman/cuscosmart.collection.json` → **Run collec
 
 ## Seguridad
 
-- **Mínimo privilegio:** la API usa `cuscosmart_user` (SELECT, INSERT, UPDATE, DELETE y EXECUTE). No puede borrar ni crear tablas.
+- **Mínimo privilegio:** la API usa `cuscosmart_user`, que **solo tiene permiso EXECUTE**. No puede leer, modificar ni borrar tablas directamente: únicamente ejecutar los procedimientos, que ya validan las reglas y al dueño.
+- **Modo estricto de MySQL:** si un valor no cabe en su columna, se rechaza en vez de recortarse en silencio.
+- **JWT con algoritmo fijo (HS256)**, y el rol se comprueba contra la base en cada petición.
 - **Sin SQL armado con texto:** todo pasa por `CALL` con parámetros `?`, así que no hay inyección SQL.
 - **Contraseñas:** se guardan con bcrypt. El login responde igual (y tarda lo mismo) si falla el correo o la contraseña.
 - **Lo ajeno se trata como inexistente:** un itinerario de otra persona responde 404, no 403.
-- **Configuración y cabeceras:** helmet, CORS limitado al front, límite de tamaño del JSON y `.env` validado al arrancar y fuera de Git.
+- **Configuración y cabeceras:** helmet, CORS limitado al front, límite de tamaño del JSON, `.env` validado al arrancar y fuera de Git, y Swagger desactivado con `NODE_ENV=production`.
+- **Entradas acotadas:** las coordenadas deben estar dentro del Perú, la paginación tiene topes, los comodines `%` y `_` de las búsquedas se escapan y las fotos solo aceptan `https://` o `img/`.
+
+**Revisión:** los agentes *tester* y *security* del equipo revisaron la API. No hubo hallazgos críticos ni altos, y las mejoras sugeridas están aplicadas.
+
+**Aceptado a propósito:** el registro avisa "Ese correo ya está registrado", porque es más claro para el usuario. Esto permite saber si un correo existe; el límite de 20 intentos lo mitiga.
 
 ## Guía de construcción por fases
 

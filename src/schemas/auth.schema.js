@@ -9,9 +9,9 @@ export const registroSchema = z.object({
   contrasena: z
     .string()
     .min(8, 'Mínimo 8 caracteres')
-    .max(72, 'Máximo 72 caracteres') // bcrypt solo usa los primeros 72 bytes
     .regex(/[A-Za-z]/, 'Debe tener al menos una letra')
-    .regex(/[0-9]/, 'Debe tener al menos un número'),
+    .regex(/[0-9]/, 'Debe tener al menos un número')
+    .refine((v) => Buffer.byteLength(v, 'utf8') <= 72, 'Máximo 72 bytes (bcrypt ignora el resto)'),
   telefono: textoOpcional(20),
 });
 

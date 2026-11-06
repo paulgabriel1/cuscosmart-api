@@ -91,6 +91,10 @@
       "value": ""
     },
     {
+      "key": "paradaCatedral",
+      "value": ""
+    },
+    {
       "key": "idPregunta",
       "value": ""
     }
@@ -1338,6 +1342,44 @@
           }
         },
         {
+          "name": "GET /atractivos?page=1e308 (no rompe la API)",
+          "event": [
+            {
+              "listen": "test",
+              "script": {
+                "type": "text/javascript",
+                "exec": [
+                  "pm.test('Responde 400', () => pm.response.to.have.status(400));",
+                  "pm.test(\"Formato ok:false\", () => { pm.expect(pm.response.json().ok).to.eql(false); });",
+                  "pm.test(\"Código VALIDATION_ERROR\", () => { pm.expect(pm.response.json().error.code).to.eql(\"VALIDATION_ERROR\"); });"
+                ]
+              }
+            }
+          ],
+          "request": {
+            "method": "GET",
+            "header": [],
+            "url": {
+              "raw": "{{baseUrl}}/atractivos?page=1e308",
+              "host": [
+                "{{baseUrl}}"
+              ],
+              "path": [
+                "atractivos"
+              ],
+              "query": [
+                {
+                  "key": "page",
+                  "value": "1e308"
+                }
+              ]
+            },
+            "auth": {
+              "type": "noauth"
+            }
+          }
+        },
+        {
           "name": "GET /atractivos con filtros inválidos",
           "event": [
             {
@@ -1878,6 +1920,61 @@
             "body": {
               "mode": "raw",
               "raw": "{\n  \"dia_semana\": \"Lunes\",\n  \"hora_apertura\": \"18:00\",\n  \"hora_cierre\": \"08:00\"\n}",
+              "options": {
+                "raw": {
+                  "language": "json"
+                }
+              }
+            }
+          }
+        },
+        {
+          "name": "POST foto con javascript:",
+          "event": [
+            {
+              "listen": "test",
+              "script": {
+                "type": "text/javascript",
+                "exec": [
+                  "pm.test('Responde 400', () => pm.response.to.have.status(400));",
+                  "pm.test(\"Formato ok:false\", () => { pm.expect(pm.response.json().ok).to.eql(false); });",
+                  "pm.test(\"Código VALIDATION_ERROR\", () => { pm.expect(pm.response.json().error.code).to.eql(\"VALIDATION_ERROR\"); });"
+                ]
+              }
+            }
+          ],
+          "request": {
+            "method": "POST",
+            "header": [
+              {
+                "key": "Content-Type",
+                "value": "application/json"
+              }
+            ],
+            "url": {
+              "raw": "{{baseUrl}}/atractivos/{{idAtractivo}}/fotos",
+              "host": [
+                "{{baseUrl}}"
+              ],
+              "path": [
+                "atractivos",
+                "{{idAtractivo}}",
+                "fotos"
+              ]
+            },
+            "auth": {
+              "type": "bearer",
+              "bearer": [
+                {
+                  "key": "token",
+                  "value": "{{tokenAdmin}}",
+                  "type": "string"
+                }
+              ]
+            },
+            "body": {
+              "mode": "raw",
+              "raw": "{\n  \"url_foto\": \"javascript:alert(1)\"\n}",
               "options": {
                 "raw": {
                   "language": "json"
@@ -2752,6 +2849,59 @@
           }
         },
         {
+          "name": "POST /itinerarios con inicio fuera del Perú",
+          "event": [
+            {
+              "listen": "test",
+              "script": {
+                "type": "text/javascript",
+                "exec": [
+                  "pm.test('Responde 400', () => pm.response.to.have.status(400));",
+                  "pm.test(\"Formato ok:false\", () => { pm.expect(pm.response.json().ok).to.eql(false); });",
+                  "pm.test(\"Código VALIDATION_ERROR\", () => { pm.expect(pm.response.json().error.code).to.eql(\"VALIDATION_ERROR\"); });"
+                ]
+              }
+            }
+          ],
+          "request": {
+            "method": "POST",
+            "header": [
+              {
+                "key": "Content-Type",
+                "value": "application/json"
+              }
+            ],
+            "url": {
+              "raw": "{{baseUrl}}/itinerarios",
+              "host": [
+                "{{baseUrl}}"
+              ],
+              "path": [
+                "itinerarios"
+              ]
+            },
+            "auth": {
+              "type": "bearer",
+              "bearer": [
+                {
+                  "key": "token",
+                  "value": "{{tokenAna}}",
+                  "type": "string"
+                }
+              ]
+            },
+            "body": {
+              "mode": "raw",
+              "raw": "{\n  \"nombre\": \"Madrid\",\n  \"latitud_inicio\": 40.4168,\n  \"longitud_inicio\": -3.7038\n}",
+              "options": {
+                "raw": {
+                  "language": "json"
+                }
+              }
+            }
+          }
+        },
+        {
           "name": "POST /itinerarios solo con latitud",
           "event": [
             {
@@ -3065,16 +3215,16 @@
           }
         },
         {
-          "name": "Parada con favorito de otra persona (trigger)",
+          "name": "Parada con favorito de otra persona (404: no es tuyo)",
           "event": [
             {
               "listen": "test",
               "script": {
                 "type": "text/javascript",
                 "exec": [
-                  "pm.test('Responde 422', () => pm.response.to.have.status(422));",
+                  "pm.test('Responde 404', () => pm.response.to.have.status(404));",
                   "pm.test(\"Formato ok:false\", () => { pm.expect(pm.response.json().ok).to.eql(false); });",
-                  "pm.test(\"Código BUSINESS_RULE\", () => { pm.expect(pm.response.json().error.code).to.eql(\"BUSINESS_RULE\"); });"
+                  "pm.test(\"Código NOT_FOUND\", () => { pm.expect(pm.response.json().error.code).to.eql(\"NOT_FOUND\"); });"
                 ]
               }
             }
@@ -3682,6 +3832,239 @@
                 "{{idIti}}",
                 "paradas",
                 "{{paradaQenqo}}"
+              ]
+            },
+            "auth": {
+              "type": "bearer",
+              "bearer": [
+                {
+                  "key": "token",
+                  "value": "{{tokenAna}}",
+                  "type": "string"
+                }
+              ]
+            }
+          }
+        },
+        {
+          "name": "Agregar parada Catedral (favorito 3 de Ana)",
+          "event": [
+            {
+              "listen": "test",
+              "script": {
+                "type": "text/javascript",
+                "exec": [
+                  "pm.test('Responde 201', () => pm.response.to.have.status(201));",
+                  "pm.test(\"Formato ok:true\", () => { pm.expect(pm.response.json().ok).to.eql(true); });",
+                  "pm.test(\"Guarda paradaCatedral\", () => { pm.collectionVariables.set('paradaCatedral', pm.response.json().data.paradas[1].parada_id); });"
+                ]
+              }
+            }
+          ],
+          "request": {
+            "method": "POST",
+            "header": [
+              {
+                "key": "Content-Type",
+                "value": "application/json"
+              }
+            ],
+            "url": {
+              "raw": "{{baseUrl}}/itinerarios/{{idIti}}/paradas",
+              "host": [
+                "{{baseUrl}}"
+              ],
+              "path": [
+                "itinerarios",
+                "{{idIti}}",
+                "paradas"
+              ]
+            },
+            "auth": {
+              "type": "bearer",
+              "bearer": [
+                {
+                  "key": "token",
+                  "value": "{{tokenAna}}",
+                  "type": "string"
+                }
+              ]
+            },
+            "body": {
+              "mode": "raw",
+              "raw": "{\n  \"favorito_id\": 3\n}",
+              "options": {
+                "raw": {
+                  "language": "json"
+                }
+              }
+            }
+          }
+        },
+        {
+          "name": "Marcar Catedral visitada",
+          "event": [
+            {
+              "listen": "test",
+              "script": {
+                "type": "text/javascript",
+                "exec": [
+                  "pm.test('Responde 200', () => pm.response.to.have.status(200));",
+                  "pm.test(\"Formato ok:true\", () => { pm.expect(pm.response.json().ok).to.eql(true); });"
+                ]
+              }
+            }
+          ],
+          "request": {
+            "method": "PATCH",
+            "header": [],
+            "url": {
+              "raw": "{{baseUrl}}/itinerarios/{{idIti}}/paradas/{{paradaCatedral}}/visitado",
+              "host": [
+                "{{baseUrl}}"
+              ],
+              "path": [
+                "itinerarios",
+                "{{idIti}}",
+                "paradas",
+                "{{paradaCatedral}}",
+                "visitado"
+              ]
+            },
+            "auth": {
+              "type": "bearer",
+              "bearer": [
+                {
+                  "key": "token",
+                  "value": "{{tokenAna}}",
+                  "type": "string"
+                }
+              ]
+            }
+          }
+        },
+        {
+          "name": "Reseñar otra vez la Catedral en otro viaje (anti inflado)",
+          "event": [
+            {
+              "listen": "test",
+              "script": {
+                "type": "text/javascript",
+                "exec": [
+                  "pm.test('Responde 409', () => pm.response.to.have.status(409));",
+                  "pm.test(\"Formato ok:false\", () => { pm.expect(pm.response.json().ok).to.eql(false); });",
+                  "pm.test(\"Código DUPLICATE\", () => { pm.expect(pm.response.json().error.code).to.eql(\"DUPLICATE\"); });",
+                  "pm.test(\"Una reseña por turista\", () => { pm.expect(pm.response.json().error.message).to.eql('Ya reseñaste este atractivo'); });"
+                ]
+              }
+            }
+          ],
+          "request": {
+            "method": "POST",
+            "header": [
+              {
+                "key": "Content-Type",
+                "value": "application/json"
+              }
+            ],
+            "url": {
+              "raw": "{{baseUrl}}/itinerarios/{{idIti}}/resenas",
+              "host": [
+                "{{baseUrl}}"
+              ],
+              "path": [
+                "itinerarios",
+                "{{idIti}}",
+                "resenas"
+              ]
+            },
+            "auth": {
+              "type": "bearer",
+              "bearer": [
+                {
+                  "key": "token",
+                  "value": "{{tokenAna}}",
+                  "type": "string"
+                }
+              ]
+            },
+            "body": {
+              "mode": "raw",
+              "raw": "{\n  \"atractivo_id\": 3,\n  \"puntuacion\": 5\n}",
+              "options": {
+                "raw": {
+                  "language": "json"
+                }
+              }
+            }
+          }
+        },
+        {
+          "name": "Quitar el favorito Plaza (cae su parada en cascada)",
+          "event": [
+            {
+              "listen": "test",
+              "script": {
+                "type": "text/javascript",
+                "exec": [
+                  "pm.test('Responde 204', () => pm.response.to.have.status(204));"
+                ]
+              }
+            }
+          ],
+          "request": {
+            "method": "DELETE",
+            "header": [],
+            "url": {
+              "raw": "{{baseUrl}}/favoritos/{{favPlaza}}",
+              "host": [
+                "{{baseUrl}}"
+              ],
+              "path": [
+                "favoritos",
+                "{{favPlaza}}"
+              ]
+            },
+            "auth": {
+              "type": "bearer",
+              "bearer": [
+                {
+                  "key": "token",
+                  "value": "{{tokenAna}}",
+                  "type": "string"
+                }
+              ]
+            }
+          }
+        },
+        {
+          "name": "El orden se compacta tras la cascada",
+          "event": [
+            {
+              "listen": "test",
+              "script": {
+                "type": "text/javascript",
+                "exec": [
+                  "pm.test('Responde 200', () => pm.response.to.have.status(200));",
+                  "pm.test(\"Formato ok:true\", () => { pm.expect(pm.response.json().ok).to.eql(true); });",
+                  "pm.test(\"Queda 1 parada\", () => { pm.expect(pm.response.json().data.paradas.length).to.eql(1); });",
+                  "pm.test(\"Catedral pasa al orden 1\", () => { pm.expect(pm.response.json().data.paradas[0].orden).to.eql(1); });",
+                  "pm.test(\"Es la Catedral\", () => { pm.expect(pm.response.json().data.paradas[0].atractivo).to.eql(\"Catedral del Cusco\"); });"
+                ]
+              }
+            }
+          ],
+          "request": {
+            "method": "GET",
+            "header": [],
+            "url": {
+              "raw": "{{baseUrl}}/itinerarios/{{idIti}}",
+              "host": [
+                "{{baseUrl}}"
+              ],
+              "path": [
+                "itinerarios",
+                "{{idIti}}"
               ]
             },
             "auth": {
@@ -4785,6 +5168,46 @@
                 {
                   "key": "token",
                   "value": "{{tokenAdmin}}",
+                  "type": "string"
+                }
+              ]
+            }
+          }
+        },
+        {
+          "name": "El token de una cuenta eliminada deja de servir",
+          "event": [
+            {
+              "listen": "test",
+              "script": {
+                "type": "text/javascript",
+                "exec": [
+                  "pm.test('Responde 401', () => pm.response.to.have.status(401));",
+                  "pm.test(\"Formato ok:false\", () => { pm.expect(pm.response.json().ok).to.eql(false); });",
+                  "pm.test(\"Código INVALID_TOKEN\", () => { pm.expect(pm.response.json().error.code).to.eql(\"INVALID_TOKEN\"); });"
+                ]
+              }
+            }
+          ],
+          "request": {
+            "method": "GET",
+            "header": [],
+            "url": {
+              "raw": "{{baseUrl}}/auth/me",
+              "host": [
+                "{{baseUrl}}"
+              ],
+              "path": [
+                "auth",
+                "me"
+              ]
+            },
+            "auth": {
+              "type": "bearer",
+              "bearer": [
+                {
+                  "key": "token",
+                  "value": "{{tokenNuevo}}",
                   "type": "string"
                 }
               ]
