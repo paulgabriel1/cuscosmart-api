@@ -19,7 +19,7 @@ Esta es la guía paso a paso para construir **CuscoSmart IA desde cero**. Sigue 
 | Fase | Tema | Resultado |
 | --- | --- | --- |
 | [0](fase-00.md) | Preparar la PC, la carpeta y el repositorio | Repo privado en GitHub con el primer commit |
-| 1 | Base de datos: tablas, función, triggers y procedimientos | `cuscosmart_db` creada y probada con `CALL` |
+| [1](fase-01.md) | Base de datos: tablas, función, triggers y procedimientos | `cuscosmart_db` creada y probada con `CALL` |
 | 2 | Proyecto base de Node | `GET /api/v1/health` responde |
 | 3 | Manejo de errores y validación | Errores con formato único, 400 y 404 controlados |
 | 4 | Autenticación y roles | Registro, login con JWT, rutas solo para ADMIN |
