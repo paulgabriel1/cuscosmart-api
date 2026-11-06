@@ -1,7 +1,6 @@
 -- =====================================================================
 --  CuscoSmart IA · cuscosmart_todo.sql (ARCHIVO GENERADO: no editar a mano)
---  Une schema + logica + seed + usuario + verificacion en el orden correcto.
---  Uso: cmd /c "C:\xampp\mysql\bin\mysql.exe -u root < database\cuscosmart_todo.sql"
+--  Une schema + logica + seed + usuario + verificacion. Se arma con: npm run db:armar
 -- =====================================================================
 
 -- >>> schema.sql
@@ -165,6 +164,7 @@ CREATE TABLE tbl_resena (
   CONSTRAINT fk_resena_atractivo  FOREIGN KEY (atractivo_id)  REFERENCES tbl_atractivo(id)  ON DELETE CASCADE,
   CONSTRAINT fk_resena_itinerario FOREIGN KEY (itinerario_id) REFERENCES tbl_itinerario(id) ON DELETE CASCADE
 ) ENGINE=InnoDB;
+
 
 -- >>> logica.sql
 -- =====================================================================
@@ -981,6 +981,7 @@ END$$
 
 DELIMITER ;
 
+
 -- >>> seed.sql
 -- =====================================================================
 --  CuscoSmart IA · seed.sql
@@ -1091,6 +1092,7 @@ CALL sp_ordenar_itinerario_ia(2, 1);
 CALL sp_marcar_visitado(2, 1, (SELECT d.id FROM tbl_detalle_itinerario d JOIN tbl_atractivo_favorito f ON f.id = d.atractivo_favorito_id WHERE d.itinerario_id = 1 AND f.atractivo_id = 3));
 CALL sp_registrar_resena(2, 1, 3, 5, 'Impresionante por dentro, vale cada sol.');
 
+
 -- >>> usuario.sql
 -- =====================================================================
 --  CuscoSmart IA · usuario.sql
@@ -1108,6 +1110,7 @@ ALTER USER 'cuscosmart_user'@'127.0.0.1' IDENTIFIED BY 'Cusco2026*';
 GRANT SELECT, INSERT, UPDATE, DELETE, EXECUTE ON cuscosmart_db.* TO 'cuscosmart_user'@'localhost';
 GRANT SELECT, INSERT, UPDATE, DELETE, EXECUTE ON cuscosmart_db.* TO 'cuscosmart_user'@'127.0.0.1';
 FLUSH PRIVILEGES;
+
 
 -- >>> verificacion.sql
 -- =====================================================================
