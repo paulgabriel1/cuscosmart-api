@@ -63,7 +63,10 @@ INSERT INTO tbl_foto (url_foto, descripcion, atractivo_id) VALUES
  ('img/plaza-armas.jpg',  'Vista de la plaza',          5),
  ('img/san-blas.jpg',     'Calle de San Blas',          6),
  ('img/san-pedro.jpg',    'Puestos del mercado',        7),
+ ('img/museo-inka.jpg',   'Patio del museo',            8),
  ('img/cristo-blanco.jpg','Vista desde el mirador',     9),
+ ('img/qenqo.jpg',        'Roca tallada del adoratorio',10),
+ ('img/tambomachay.jpg',  'Fuentes de agua inca',       11),
  ('img/ollantaytambo.jpg','Terrazas de la fortaleza',   12),
  ('img/moray.jpg',        'Andenes circulares',         13),
  ('img/maras.jpg',        'Pozos de sal',               14);
