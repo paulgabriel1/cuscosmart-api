@@ -7,6 +7,7 @@ import {
   preguntarSchema, preguntaFrecuenteSchema, listarResenasQuery, listarUsuariosQuery, rolSchema,
 } from '../schemas/admin.schema.js';
 import * as c from '../controllers/admin.controller.js';
+import { eliminarMiResena } from '../controllers/viaje.controller.js';
 
 const soloAdmin = [authenticate, authorize('ADMIN')];
 const conId = validate(idParam, 'params');
@@ -28,6 +29,7 @@ resenasDeAtractivo.get('/', conId, validate(listarResenasQuery, 'query'), c.list
 
 export const resenas = Router();
 resenas.delete('/:id', soloAdmin, conId, c.eliminarResena);
+resenas.delete('/:id/propia', authenticate, conId, eliminarMiResena); // el turista borra SU reseña
 
 // ---------- /usuarios (solo ADMIN) ----------
 export const usuarios = Router();

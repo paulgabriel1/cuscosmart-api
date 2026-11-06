@@ -27,6 +27,12 @@ export const agregarParada = async (req, res) => ok(res, await s.agregarParada(y
 export const quitarParada = async (req, res) => ok(res, await s.quitarParada(yo(req), p(req).id, p(req).paradaId));
 export const ordenarConIA = async (req, res) => ok(res, await s.ordenarConIA(yo(req), p(req).id));
 export const marcarVisitado = async (req, res) => ok(res, await s.marcarVisitado(yo(req), p(req).id, p(req).paradaId));
+export const desmarcarVisitado = async (req, res) => ok(res, await s.desmarcarVisitado(yo(req), p(req).id, p(req).paradaId));
+export const miRecorrido = async (req, res) => ok(res, await s.miRecorrido(yo(req)));
 
 // ---------- Reseñas ----------
 export const registrarResena = async (req, res) => ok(res, await s.registrarResena(yo(req), p(req).id, req.body), 201);
+export async function eliminarMiResena(req, res) {
+  await s.eliminarMiResena(yo(req), p(req).id);
+  res.status(204).end();
+}

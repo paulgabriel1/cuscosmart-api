@@ -106,6 +106,7 @@ CREATE TABLE tbl_atractivo_favorito (
   fecha_guardado DATETIME(6) NOT NULL DEFAULT CURRENT_TIMESTAMP(6),
   atractivo_id   INT(11)     NOT NULL,
   usuario_id     INT(11)     NOT NULL,
+  es_favorito    TINYINT(1)  NOT NULL DEFAULT 1,       -- 0 = solo está en un viaje (no aparece en "Favoritos")
   PRIMARY KEY (id),
   UNIQUE KEY uq_favorito (usuario_id, atractivo_id),   -- no repetir el mismo favorito
   CONSTRAINT fk_favorito_atractivo FOREIGN KEY (atractivo_id) REFERENCES tbl_atractivo(id) ON DELETE CASCADE,
@@ -133,6 +134,7 @@ CREATE TABLE tbl_detalle_itinerario (
   costo_parada          DECIMAL(8,2) NOT NULL DEFAULT 0.00,
   distancia_km          DECIMAL(6,2),                   -- distancia desde el punto de inicio
   visitado              TINYINT(1)   NOT NULL DEFAULT 0, -- 1 = el turista ya fue
+  fecha_visita          DATETIME(6)  NULL,               -- cuándo lo marcó como visitado (línea de tiempo del perfil)
   itinerario_id         INT(11)      NOT NULL,
   atractivo_favorito_id INT(11)      NOT NULL,
   PRIMARY KEY (id),

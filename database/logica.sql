@@ -56,6 +56,12 @@ DROP PROCEDURE IF EXISTS sp_eliminar_foto;
 DROP PROCEDURE IF EXISTS sp_agregar_favorito;
 DROP PROCEDURE IF EXISTS sp_listar_favoritos;
 DROP PROCEDURE IF EXISTS sp_quitar_favorito;
+DROP PROCEDURE IF EXISTS sp_limpiar_lugares_de_viaje;
+DROP PROCEDURE IF EXISTS sp_agregar_parada_lugar;
+DROP PROCEDURE IF EXISTS sp_desmarcar_visitado;
+DROP PROCEDURE IF EXISTS sp_mi_recorrido;
+DROP PROCEDURE IF EXISTS sp_eliminar_mi_resena;
+DROP PROCEDURE IF EXISTS sp_nombres_atractivos;
 DROP PROCEDURE IF EXISTS sp_validar_itinerario;
 DROP PROCEDURE IF EXISTS sp_crear_itinerario;
 DROP PROCEDURE IF EXISTS sp_listar_itinerarios;
@@ -178,7 +184,7 @@ BEGIN
   END IF;
   -- Además de los datos, devuelve sus totales (para la pantalla "Mi perfil")
   SELECT u.id, u.nombre_completo, u.correo, u.telefono, u.rol, u.fecha_registro,
-         (SELECT COUNT(*) FROM tbl_atractivo_favorito f WHERE f.usuario_id = u.id) AS favoritos,
+         (SELECT COUNT(*) FROM tbl_atractivo_favorito f WHERE f.usuario_id = u.id AND f.es_favorito = 1) AS favoritos,
          (SELECT COUNT(*) FROM tbl_itinerario i WHERE i.usuario_id = u.id)         AS viajes,
          (SELECT COUNT(*) FROM tbl_resena r JOIN tbl_itinerario ir ON ir.id = r.itinerario_id WHERE ir.usuario_id = u.id) AS resenas
     FROM tbl_usuario u WHERE u.id = p_usuario_id;
@@ -342,10 +348,18 @@ END$$
 
 -- Lista con filtros opcionales (NULL = sin filtro) y paginación.
 -- Devuelve 2 resultados: 1) las filas de la página, 2) el total.
+-- Búsqueda: sin importar tildes ni mayúsculas (collation unicode_ci), por palabras en orden
+-- ("plaza armas" encuentra "Plaza de Armas") y también en categoría, zona y dirección.
+-- Los que coinciden por NOMBRE salen primero.
 CREATE PROCEDURE sp_listar_atractivos(
   IN p_categoria_id INT, IN p_zona_id INT, IN p_buscar VARCHAR(100),
   IN p_limit INT, IN p_offset INT)
 BEGIN
+  DECLARE v_patron VARCHAR(220) DEFAULT NULL;
+  IF p_buscar IS NOT NULL AND TRIM(p_buscar) <> '' THEN
+    SET v_patron = CONCAT('%', REPLACE(TRIM(p_buscar), ' ', '%'), '%');
+  END IF;
+
   SELECT a.id, a.nombre, a.direccion, a.latitud, a.longitud, a.precio_entrada, a.calificacion,
          a.categoria_id, c.nombre AS categoria, a.zona_id, z.nombre AS zona,
          (SELECT f.url_foto FROM tbl_foto f WHERE f.atractivo_id = a.id ORDER BY f.id LIMIT 1) AS foto
@@ -354,17 +368,27 @@ BEGIN
     JOIN tbl_zona z      ON z.id = a.zona_id
    WHERE (p_categoria_id IS NULL OR a.categoria_id = p_categoria_id)
      AND (p_zona_id      IS NULL OR a.zona_id      = p_zona_id)
-     AND (p_buscar       IS NULL OR a.nombre LIKE CONCAT('%', p_buscar, '%')
-                                 OR a.descripcion LIKE CONCAT('%', p_buscar, '%'))
-   ORDER BY a.calificacion DESC, a.nombre
+     AND (v_patron       IS NULL OR a.nombre LIKE v_patron OR a.descripcion LIKE v_patron
+                                 OR a.direccion LIKE v_patron OR c.nombre LIKE v_patron OR z.nombre LIKE v_patron)
+   ORDER BY (v_patron IS NOT NULL AND a.nombre LIKE v_patron) DESC, a.calificacion DESC, a.nombre
    LIMIT p_limit OFFSET p_offset;
 
   SELECT COUNT(*) AS total
     FROM tbl_atractivo a
+    JOIN tbl_categoria c ON c.id = a.categoria_id
+    JOIN tbl_zona z      ON z.id = a.zona_id
    WHERE (p_categoria_id IS NULL OR a.categoria_id = p_categoria_id)
      AND (p_zona_id      IS NULL OR a.zona_id      = p_zona_id)
-     AND (p_buscar       IS NULL OR a.nombre LIKE CONCAT('%', p_buscar, '%')
-                                 OR a.descripcion LIKE CONCAT('%', p_buscar, '%'));
+     AND (v_patron       IS NULL OR a.nombre LIKE v_patron OR a.descripcion LIKE v_patron
+                                 OR a.direccion LIKE v_patron OR c.nombre LIKE v_patron OR z.nombre LIKE v_patron);
+END$$
+
+-- Nombres de todos los atractivos: la API los usa para sugerir "¿Quisiste decir…?" cuando hay errores de tipeo
+CREATE PROCEDURE sp_nombres_atractivos()
+BEGIN
+  SELECT a.id, a.nombre, c.nombre AS categoria
+    FROM tbl_atractivo a JOIN tbl_categoria c ON c.id = a.categoria_id
+   ORDER BY a.nombre;
 END$$
 
 -- Un atractivo completo. Devuelve 3 resultados: datos, horarios y fotos.
@@ -513,16 +537,26 @@ END$$
 -- =====================================================================
 -- 6. FAVORITOS
 -- =====================================================================
+-- Si el lugar ya estaba guardado solo como parada de un viaje (es_favorito = 0), se vuelve favorito.
 CREATE PROCEDURE sp_agregar_favorito(IN p_usuario_id INT, IN p_atractivo_id INT)
 BEGIN
+  DECLARE v_id INT;
+  DECLARE v_es TINYINT;
+
   CALL sp_validar_atractivo(p_atractivo_id);
-  IF EXISTS (SELECT 1 FROM tbl_atractivo_favorito
-              WHERE usuario_id = p_usuario_id AND atractivo_id = p_atractivo_id) THEN
+  SET v_id = (SELECT id FROM tbl_atractivo_favorito WHERE usuario_id = p_usuario_id AND atractivo_id = p_atractivo_id);
+  SET v_es = (SELECT es_favorito FROM tbl_atractivo_favorito WHERE id = v_id);
+  IF v_es = 1 THEN
     SIGNAL SQLSTATE '45409' SET MESSAGE_TEXT = 'Ese atractivo ya está en tus favoritos';
   END IF;
-  INSERT INTO tbl_atractivo_favorito (usuario_id, atractivo_id)
-  VALUES (p_usuario_id, p_atractivo_id);
-  SELECT LAST_INSERT_ID() AS favorito_id;
+
+  IF v_id IS NOT NULL THEN
+    UPDATE tbl_atractivo_favorito SET es_favorito = 1, fecha_guardado = CURRENT_TIMESTAMP(6) WHERE id = v_id;
+    SELECT v_id AS favorito_id;
+  ELSE
+    INSERT INTO tbl_atractivo_favorito (usuario_id, atractivo_id) VALUES (p_usuario_id, p_atractivo_id);
+    SELECT LAST_INSERT_ID() AS favorito_id;
+  END IF;
 END$$
 
 CREATE PROCEDURE sp_listar_favoritos(IN p_usuario_id INT)
@@ -535,25 +569,33 @@ BEGIN
     JOIN tbl_atractivo a ON a.id = f.atractivo_id
     JOIN tbl_categoria c ON c.id = a.categoria_id
     JOIN tbl_zona z      ON z.id = a.zona_id
-   WHERE f.usuario_id = p_usuario_id
+   WHERE f.usuario_id = p_usuario_id AND f.es_favorito = 1
    ORDER BY f.fecha_guardado DESC;
 END$$
 
--- Quitar un favorito también lo quita de los itinerarios (cascada); se recalculan su orden y totales.
+-- Quitar un favorito NO toca los viajes: si el lugar es parada de algún viaje, solo deja de
+-- mostrarse en "Favoritos" (es_favorito = 0); si no se usa en ningún viaje, se borra.
 CREATE PROCEDURE sp_quitar_favorito(IN p_usuario_id INT, IN p_favorito_id INT)
 BEGIN
-  IF NOT EXISTS (SELECT 1 FROM tbl_atractivo_favorito WHERE id = p_favorito_id AND usuario_id = p_usuario_id) THEN
+  IF NOT EXISTS (SELECT 1 FROM tbl_atractivo_favorito
+                  WHERE id = p_favorito_id AND usuario_id = p_usuario_id AND es_favorito = 1) THEN
     SIGNAL SQLSTATE '45404' SET MESSAGE_TEXT = 'Favorito no encontrado';
   END IF;
 
-  DROP TEMPORARY TABLE IF EXISTS tmp_itinerarios;
-  CREATE TEMPORARY TABLE tmp_itinerarios AS
-    SELECT DISTINCT itinerario_id AS id FROM tbl_detalle_itinerario WHERE atractivo_favorito_id = p_favorito_id;
+  IF EXISTS (SELECT 1 FROM tbl_detalle_itinerario WHERE atractivo_favorito_id = p_favorito_id) THEN
+    UPDATE tbl_atractivo_favorito SET es_favorito = 0 WHERE id = p_favorito_id;
+  ELSE
+    DELETE FROM tbl_atractivo_favorito WHERE id = p_favorito_id;
+  END IF;
+END$$
 
-  DELETE FROM tbl_atractivo_favorito WHERE id = p_favorito_id;
-
-  CALL sp_recalcular_itinerarios();
-  DROP TEMPORARY TABLE IF EXISTS tmp_itinerarios;
+-- Uso interno: borra los lugares que solo existían para un viaje (es_favorito = 0)
+-- y que ya no son parada de ningún viaje.
+CREATE PROCEDURE sp_limpiar_lugares_de_viaje(IN p_usuario_id INT)
+BEGIN
+  DELETE f FROM tbl_atractivo_favorito f
+    LEFT JOIN tbl_detalle_itinerario d ON d.atractivo_favorito_id = f.id
+   WHERE f.usuario_id = p_usuario_id AND f.es_favorito = 0 AND d.id IS NULL;
 END$$
 
 -- =====================================================================
@@ -597,15 +639,43 @@ BEGIN
          i.latitud_inicio, i.longitud_inicio, i.fecha_creacion
     FROM tbl_itinerario i JOIN tbl_usuario u ON u.id = i.usuario_id
    WHERE i.id = p_itinerario_id;
-  SELECT d.id AS parada_id, d.orden, d.distancia_km, d.tiempo_estimado_horas, d.costo_parada, d.visitado,
-         f.id AS favorito_id, a.id AS atractivo_id, a.nombre AS atractivo, a.latitud, a.longitud,
-         EXISTS (SELECT 1 FROM tbl_resena r
-                  WHERE r.itinerario_id = d.itinerario_id AND r.atractivo_id = a.id) AS resenado
+  -- distancia_km se calcula siempre al vuelo desde el punto de inicio (aunque la ruta no esté ordenada)
+  SELECT d.id AS parada_id, d.orden,
+         fn_distancia_km(i.latitud_inicio, i.longitud_inicio, a.latitud, a.longitud) AS distancia_km,
+         d.tiempo_estimado_horas, d.costo_parada, d.visitado, d.fecha_visita,
+         f.id AS favorito_id, f.es_favorito, a.id AS atractivo_id, a.nombre AS atractivo, a.latitud, a.longitud,
+         c.nombre AS categoria,
+         (SELECT ft.url_foto FROM tbl_foto ft WHERE ft.atractivo_id = a.id ORDER BY ft.id LIMIT 1) AS foto,
+         r.id AS resena_id, r.puntuacion,
+         r.id IS NOT NULL AS resenado
     FROM tbl_detalle_itinerario d
+    JOIN tbl_itinerario i         ON i.id = d.itinerario_id
     JOIN tbl_atractivo_favorito f ON f.id = d.atractivo_favorito_id
     JOIN tbl_atractivo a          ON a.id = f.atractivo_id
+    JOIN tbl_categoria c          ON c.id = a.categoria_id
+    LEFT JOIN tbl_resena r        ON r.itinerario_id = d.itinerario_id AND r.atractivo_id = a.id
    WHERE d.itinerario_id = p_itinerario_id
    ORDER BY d.orden;
+END$$
+
+-- "Mi recorrido" (perfil): todas las paradas de todos mis viajes, como checklist / línea de tiempo.
+-- Primero lo visitado (lo más reciente arriba) y después lo pendiente.
+CREATE PROCEDURE sp_mi_recorrido(IN p_usuario_id INT)
+BEGIN
+  SELECT d.id AS parada_id, d.visitado, d.fecha_visita, d.orden,
+         i.id AS itinerario_id, i.nombre AS itinerario,
+         a.id AS atractivo_id, a.nombre AS atractivo, c.nombre AS categoria, z.nombre AS zona,
+         (SELECT ft.url_foto FROM tbl_foto ft WHERE ft.atractivo_id = a.id ORDER BY ft.id LIMIT 1) AS foto,
+         r.id AS resena_id, r.puntuacion
+    FROM tbl_detalle_itinerario d
+    JOIN tbl_itinerario i         ON i.id = d.itinerario_id
+    JOIN tbl_atractivo_favorito f ON f.id = d.atractivo_favorito_id
+    JOIN tbl_atractivo a          ON a.id = f.atractivo_id
+    JOIN tbl_categoria c          ON c.id = a.categoria_id
+    JOIN tbl_zona z               ON z.id = a.zona_id
+    LEFT JOIN tbl_resena r        ON r.itinerario_id = d.itinerario_id AND r.atractivo_id = a.id
+   WHERE i.usuario_id = p_usuario_id
+   ORDER BY d.visitado DESC, d.fecha_visita DESC, i.fecha_creacion DESC, d.orden;
 END$$
 
 -- Si cambia el punto de inicio, la ruta deja de estar ordenada por la IA.
@@ -633,6 +703,7 @@ BEGIN
   CALL sp_validar_itinerario(p_usuario_id, p_itinerario_id);
   DELETE FROM tbl_resena WHERE itinerario_id = p_itinerario_id;
   DELETE FROM tbl_itinerario WHERE id = p_itinerario_id;   -- las paradas caen en cascada
+  CALL sp_limpiar_lugares_de_viaje(p_usuario_id);
 END$$
 
 -- Recalcula la duración y el costo total del itinerario
@@ -704,23 +775,54 @@ BEGIN
   CALL sp_ver_itinerario(p_usuario_id, p_itinerario_id);
 END$$
 
--- Quita una parada y "compacta" el orden (1,2,4 → 1,2,3)
+-- Agrega una parada a partir de CUALQUIER atractivo, sin guardarlo en "Favoritos".
+-- Por dentro el viaje sigue apuntando a tbl_atractivo_favorito (diagrama ER), pero con es_favorito = 0.
+CREATE PROCEDURE sp_agregar_parada_lugar(
+  IN p_usuario_id INT, IN p_itinerario_id INT, IN p_atractivo_id INT, IN p_tiempo_horas DECIMAL(4,2))
+BEGIN
+  DECLARE v_fav INT;
+
+  CALL sp_validar_itinerario(p_usuario_id, p_itinerario_id);
+  CALL sp_validar_atractivo(p_atractivo_id);
+  IF p_tiempo_horas IS NOT NULL AND (p_tiempo_horas <= 0 OR p_tiempo_horas > 24) THEN
+    SIGNAL SQLSTATE '45000' SET MESSAGE_TEXT = 'El tiempo estimado debe estar entre 0 y 24 horas';
+  END IF;
+
+  SET v_fav = (SELECT id FROM tbl_atractivo_favorito WHERE usuario_id = p_usuario_id AND atractivo_id = p_atractivo_id);
+  IF v_fav IS NOT NULL AND EXISTS (SELECT 1 FROM tbl_detalle_itinerario
+                                    WHERE itinerario_id = p_itinerario_id AND atractivo_favorito_id = v_fav) THEN
+    SIGNAL SQLSTATE '45409' SET MESSAGE_TEXT = 'Ese lugar ya está en el itinerario';
+  END IF;
+  IF v_fav IS NULL THEN
+    INSERT INTO tbl_atractivo_favorito (usuario_id, atractivo_id, es_favorito) VALUES (p_usuario_id, p_atractivo_id, 0);
+    SET v_fav = LAST_INSERT_ID();
+  END IF;
+
+  CALL sp_agregar_parada(p_usuario_id, p_itinerario_id, v_fav, p_tiempo_horas);
+END$$
+
+-- Quita una parada y "compacta" el orden (1,2,4 → 1,2,3).
+-- Si ese lugar tenía reseña en este viaje, se borra también: ya no hay visita que la respalde.
 CREATE PROCEDURE sp_quitar_parada(IN p_usuario_id INT, IN p_itinerario_id INT, IN p_parada_id INT)
 BEGIN
   DECLARE v_orden INT;
+  DECLARE v_atractivo INT;
 
   CALL sp_validar_itinerario(p_usuario_id, p_itinerario_id);
-  SELECT orden INTO v_orden FROM tbl_detalle_itinerario
-   WHERE id = p_parada_id AND itinerario_id = p_itinerario_id;
+  SET v_orden = (SELECT orden FROM tbl_detalle_itinerario WHERE id = p_parada_id AND itinerario_id = p_itinerario_id);
   IF v_orden IS NULL THEN
     SIGNAL SQLSTATE '45404' SET MESSAGE_TEXT = 'Parada no encontrada';
   END IF;
+  SET v_atractivo = (SELECT f.atractivo_id FROM tbl_detalle_itinerario d
+                       JOIN tbl_atractivo_favorito f ON f.id = d.atractivo_favorito_id WHERE d.id = p_parada_id);
 
+  DELETE FROM tbl_resena WHERE itinerario_id = p_itinerario_id AND atractivo_id = v_atractivo;  -- el trigger recalcula
   DELETE FROM tbl_detalle_itinerario WHERE id = p_parada_id;
   UPDATE tbl_detalle_itinerario SET orden = orden - 1
    WHERE itinerario_id = p_itinerario_id AND orden > v_orden
    ORDER BY orden;   -- de menor a mayor para no chocar con la regla UNIQUE
 
+  CALL sp_limpiar_lugares_de_viaje(p_usuario_id);
   CALL sp_actualizar_totales(p_itinerario_id);
   CALL sp_ver_itinerario(p_usuario_id, p_itinerario_id);
 END$$
@@ -770,7 +872,26 @@ BEGIN
   IF NOT EXISTS (SELECT 1 FROM tbl_detalle_itinerario WHERE id = p_parada_id AND itinerario_id = p_itinerario_id) THEN
     SIGNAL SQLSTATE '45404' SET MESSAGE_TEXT = 'Parada no encontrada';
   END IF;
-  UPDATE tbl_detalle_itinerario SET visitado = 1 WHERE id = p_parada_id;
+  UPDATE tbl_detalle_itinerario
+     SET visitado = 1, fecha_visita = IFNULL(fecha_visita, CURRENT_TIMESTAMP(6))
+   WHERE id = p_parada_id;
+  CALL sp_ver_itinerario(p_usuario_id, p_itinerario_id);
+END$$
+
+-- Desmarca una visita (checklist del perfil). No se permite si ya la reseñaste.
+CREATE PROCEDURE sp_desmarcar_visitado(IN p_usuario_id INT, IN p_itinerario_id INT, IN p_parada_id INT)
+BEGIN
+  CALL sp_validar_itinerario(p_usuario_id, p_itinerario_id);
+  IF NOT EXISTS (SELECT 1 FROM tbl_detalle_itinerario WHERE id = p_parada_id AND itinerario_id = p_itinerario_id) THEN
+    SIGNAL SQLSTATE '45404' SET MESSAGE_TEXT = 'Parada no encontrada';
+  END IF;
+  IF EXISTS (SELECT 1 FROM tbl_resena r
+               JOIN tbl_atractivo_favorito f ON f.atractivo_id = r.atractivo_id
+               JOIN tbl_detalle_itinerario d ON d.atractivo_favorito_id = f.id
+              WHERE d.id = p_parada_id AND r.itinerario_id = p_itinerario_id) THEN
+    SIGNAL SQLSTATE '45000' SET MESSAGE_TEXT = 'Ya reseñaste este lugar: borra la reseña antes de desmarcarlo';
+  END IF;
+  UPDATE tbl_detalle_itinerario SET visitado = 0, fecha_visita = NULL WHERE id = p_parada_id;
   CALL sp_ver_itinerario(p_usuario_id, p_itinerario_id);
 END$$
 
@@ -806,7 +927,7 @@ END$$
 CREATE PROCEDURE sp_listar_resenas_atractivo(IN p_atractivo_id INT, IN p_limit INT, IN p_offset INT)
 BEGIN
   CALL sp_validar_atractivo(p_atractivo_id);
-  SELECT r.id, r.puntuacion, r.comentario, r.fecha, u.nombre_completo AS autor
+  SELECT r.id, r.puntuacion, r.comentario, r.fecha, u.nombre_completo AS autor, u.id AS autor_id
     FROM tbl_resena r
     JOIN tbl_itinerario i ON i.id = r.itinerario_id
     JOIN tbl_usuario u    ON u.id = i.usuario_id
@@ -820,6 +941,16 @@ END$$
 CREATE PROCEDURE sp_eliminar_resena(IN p_resena_id INT)
 BEGIN
   IF NOT EXISTS (SELECT 1 FROM tbl_resena WHERE id = p_resena_id) THEN
+    SIGNAL SQLSTATE '45404' SET MESSAGE_TEXT = 'Reseña no encontrada';
+  END IF;
+  DELETE FROM tbl_resena WHERE id = p_resena_id;
+END$$
+
+-- El turista borra SU propia reseña (404 si no existe o es de otra persona); el trigger recalcula
+CREATE PROCEDURE sp_eliminar_mi_resena(IN p_usuario_id INT, IN p_resena_id INT)
+BEGIN
+  IF NOT EXISTS (SELECT 1 FROM tbl_resena r JOIN tbl_itinerario i ON i.id = r.itinerario_id
+                  WHERE r.id = p_resena_id AND i.usuario_id = p_usuario_id) THEN
     SIGNAL SQLSTATE '45404' SET MESSAGE_TEXT = 'Reseña no encontrada';
   END IF;
   DELETE FROM tbl_resena WHERE id = p_resena_id;

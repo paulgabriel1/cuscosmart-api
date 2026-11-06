@@ -10,6 +10,7 @@
     "admin": "node scripts/crearAdmin.js",
     "db:armar": "node scripts/armarSql.js",
     "db:reset": "node scripts/armarSql.js --importar",
+    "db:migrar": "node scripts/migrar.js",
     "postman": "node scripts/generarPostman.js",
     "test:api": "node scripts/probarColeccion.js",
     "docs:verificar": "node scripts/verificarDocs.js"

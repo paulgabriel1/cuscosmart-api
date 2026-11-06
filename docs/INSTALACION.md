@@ -240,7 +240,7 @@ npm run dev
 
 Abre **<http://localhost:5173>** en Chrome o Edge.
 
-Usuarios de prueba (o usa los botones **Turista** / **Administrador** de la pantalla de ingreso):
+Usuarios de prueba (escríbelos en **Ingresar**; también puedes **Explorar como invitado** sin cuenta):
 
 | Rol | Correo | Contraseña |
 | --- | --- | --- |
@@ -253,7 +253,7 @@ Usuarios de prueba (o usa los botones **Turista** / **Administrador** de la pant
 3. Menú **Mapa** → toca un lugar de la lista de la izquierda: el mapa vuela hasta él.
 4. Botón naranja **¿Dudas?** (abajo a la derecha) → escribe `¿cuánto cuesta el boleto turístico?`.
 5. Arriba a la derecha: **ES** → cambia a **English**; la **luna** → modo oscuro.
-6. **Ingresar** → botón **Turista** → toca **Ana** (tu nombre arriba a la derecha) → **Mi perfil** → **Editar perfil**.
+6. **Ingresar** → escribe `ana@mail.com` / `Turista123` → toca **Ana** (arriba a la derecha) → **Mi perfil**: ahí está **Mi recorrido**, la línea de tiempo con los lugares visitados (toca el círculo para marcar o desmarcar).
 7. **Mis viajes** → abre "Mi primer día en Cusco" → **Ordenar con IA** → **Visitado** → **Reseñar**.
 8. Cierra sesión y entra como **Administrador** → menú **Admin** (crear/editar lugares, fotos y preguntas).
 
@@ -282,7 +282,7 @@ Usuarios de prueba (o usa los botones **Turista** / **Administrador** de la pant
    ```
 4. Abre <http://localhost:5173>.
 
-> Si `git pull` trajo cambios en la carpeta `database` (o no ves los 27 lugares), apaga la API (Ctrl + C), ejecuta **una vez** `npm run db:reset` y vuelve a `npm run dev`.
+> Si `git pull` trajo cambios en la carpeta `database`, apaga la API (Ctrl + C), ejecuta **una vez** `npm run db:migrar` (actualiza la base **sin borrar** tus datos) y vuelve a `npm run dev`. Si no ves los 27 lugares, usa `npm run db:reset`.
 > ⚠️ `db:reset` **borra y recrea** la base: se pierden los usuarios, viajes y reseñas que creaste a mano.
 
 ❌ `git pull` dice `Your local changes would be overwritten`: modificaste algún archivo. Si no te importa perder tus cambios:
