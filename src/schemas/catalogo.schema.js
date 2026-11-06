@@ -1,5 +1,5 @@
 import { z } from 'zod';
-import { id, paginacion, latitud, longitud, textoOpcional } from './comunes.js';
+import { id, paginacion, latitud, longitud, textoOpcional, busqueda } from './comunes.js';
 
 const HORA = /^([01]\d|2[0-3]):[0-5]\d(:[0-5]\d)?$/; // 08:30 o 08:30:00
 
@@ -33,7 +33,7 @@ export const atractivoSchema = z
 export const listarAtractivosQuery = z.object({
   categoria_id: id.optional(),
   zona_id: id.optional(),
-  buscar: textoOpcional(100),
+  buscar: busqueda(100),
   ...paginacion,
 });
 
@@ -52,7 +52,8 @@ export const horarioSchema = z
   });
 
 export const fotoSchema = z.object({
-  url_foto: z.string().trim().min(5).max(500),
+  // Solo enlaces https:// o rutas locales img/... (evita guardar "javascript:" u otros esquemas)
+  url_foto: z.string().trim().max(500).regex(/^(https:\/\/|img\/)[^\s"'<>]+$/, 'Usa una URL https:// o una ruta img/...'),
   descripcion: textoOpcional(255),
 });
 

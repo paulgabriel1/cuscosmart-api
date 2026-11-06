@@ -13,6 +13,10 @@
 
 USE cuscosmart_db;
 
+-- Modo estricto: si un valor no cabe en su columna, MySQL da error en vez de recortarlo en silencio.
+-- (Los procedimientos y triggers guardan el modo con el que se crearon.)
+SET SESSION sql_mode = 'STRICT_ALL_TABLES,NO_ZERO_IN_DATE,NO_ZERO_DATE,ERROR_FOR_DIVISION_BY_ZERO,NO_ENGINE_SUBSTITUTION';
+
 DROP FUNCTION  IF EXISTS fn_distancia_km;
 DROP TRIGGER   IF EXISTS trg_detalle_valida;
 DROP TRIGGER   IF EXISTS trg_resena_valida;
@@ -58,6 +62,7 @@ DROP PROCEDURE IF EXISTS sp_ver_itinerario;
 DROP PROCEDURE IF EXISTS sp_actualizar_itinerario;
 DROP PROCEDURE IF EXISTS sp_eliminar_itinerario;
 DROP PROCEDURE IF EXISTS sp_actualizar_totales;
+DROP PROCEDURE IF EXISTS sp_recalcular_itinerarios;
 DROP PROCEDURE IF EXISTS sp_agregar_parada;
 DROP PROCEDURE IF EXISTS sp_quitar_parada;
 DROP PROCEDURE IF EXISTS sp_ordenar_itinerario_ia;
@@ -378,16 +383,33 @@ CREATE PROCEDURE sp_actualizar_atractivo(
   IN p_latitud DECIMAL(10,6), IN p_longitud DECIMAL(10,6), IN p_precio DECIMAL(8,2),
   IN p_categoria_id INT, IN p_zona_id INT)
 BEGIN
+  DECLARE v_se_movio BOOLEAN;
+
   CALL sp_validar_atractivo(p_id);
+  SELECT NOT (latitud <=> p_latitud AND longitud <=> p_longitud) INTO v_se_movio
+    FROM tbl_atractivo WHERE id = p_id;
+
   UPDATE tbl_atractivo
      SET nombre = p_nombre, descripcion = p_descripcion, direccion = p_direccion,
          latitud = p_latitud, longitud = p_longitud, precio_entrada = p_precio,
          categoria_id = p_categoria_id, zona_id = p_zona_id
    WHERE id = p_id;
+
+  -- Si el atractivo cambió de ubicación, las rutas que lo usan ya no están ordenadas
+  IF v_se_movio THEN
+    UPDATE tbl_itinerario SET sugerido_ia = 0
+     WHERE id IN (SELECT d.itinerario_id FROM tbl_detalle_itinerario d
+                    JOIN tbl_atractivo_favorito f ON f.id = d.atractivo_favorito_id
+                   WHERE f.atractivo_id = p_id);
+    UPDATE tbl_detalle_itinerario d
+      JOIN tbl_atractivo_favorito f ON f.id = d.atractivo_favorito_id
+       SET d.distancia_km = NULL
+     WHERE f.atractivo_id = p_id;
+  END IF;
 END$$
 
 -- Al borrar un atractivo caen en cascada sus horarios, fotos, favoritos, paradas y reseñas.
--- Después se recalculan los totales de los itinerarios que lo tenían como parada.
+-- Después se recalculan el orden y los totales de los itinerarios que lo tenían como parada.
 CREATE PROCEDURE sp_eliminar_atractivo(IN p_id INT)
 BEGIN
   CALL sp_validar_atractivo(p_id);
@@ -401,9 +423,7 @@ BEGIN
 
   DELETE FROM tbl_atractivo WHERE id = p_id;
 
-  UPDATE tbl_itinerario i JOIN tmp_itinerarios t ON t.id = i.id
-     SET i.duracion_horas = (SELECT IFNULL(SUM(tiempo_estimado_horas), 0) FROM tbl_detalle_itinerario WHERE itinerario_id = i.id),
-         i.costo_total    = (SELECT IFNULL(SUM(costo_parada), 0)          FROM tbl_detalle_itinerario WHERE itinerario_id = i.id);
+  CALL sp_recalcular_itinerarios();
   DROP TEMPORARY TABLE IF EXISTS tmp_itinerarios;
 END$$
 
@@ -503,7 +523,7 @@ BEGIN
    ORDER BY f.fecha_guardado DESC;
 END$$
 
--- Quitar un favorito también lo quita de los itinerarios (cascada); se recalculan sus totales.
+-- Quitar un favorito también lo quita de los itinerarios (cascada); se recalculan su orden y totales.
 CREATE PROCEDURE sp_quitar_favorito(IN p_usuario_id INT, IN p_favorito_id INT)
 BEGIN
   IF NOT EXISTS (SELECT 1 FROM tbl_atractivo_favorito WHERE id = p_favorito_id AND usuario_id = p_usuario_id) THEN
@@ -516,9 +536,7 @@ BEGIN
 
   DELETE FROM tbl_atractivo_favorito WHERE id = p_favorito_id;
 
-  UPDATE tbl_itinerario i JOIN tmp_itinerarios t ON t.id = i.id
-     SET i.duracion_horas = (SELECT IFNULL(SUM(tiempo_estimado_horas), 0) FROM tbl_detalle_itinerario WHERE itinerario_id = i.id),
-         i.costo_total    = (SELECT IFNULL(SUM(costo_parada), 0)          FROM tbl_detalle_itinerario WHERE itinerario_id = i.id);
+  CALL sp_recalcular_itinerarios();
   DROP TEMPORARY TABLE IF EXISTS tmp_itinerarios;
 END$$
 
@@ -580,6 +598,11 @@ CREATE PROCEDURE sp_actualizar_itinerario(
   IN p_latitud_inicio DECIMAL(10,6), IN p_longitud_inicio DECIMAL(10,6))
 BEGIN
   CALL sp_validar_itinerario(p_usuario_id, p_itinerario_id);
+  IF NOT EXISTS (SELECT 1 FROM tbl_itinerario
+                  WHERE id = p_itinerario_id
+                    AND latitud_inicio <=> p_latitud_inicio AND longitud_inicio <=> p_longitud_inicio) THEN
+    UPDATE tbl_detalle_itinerario SET distancia_km = NULL WHERE itinerario_id = p_itinerario_id;
+  END IF;
   UPDATE tbl_itinerario
      SET sugerido_ia = IF(latitud_inicio <=> p_latitud_inicio AND longitud_inicio <=> p_longitud_inicio, sugerido_ia, 0),
          nombre = p_nombre, latitud_inicio = p_latitud_inicio, longitud_inicio = p_longitud_inicio
@@ -607,8 +630,26 @@ BEGIN
    WHERE i.id = p_itinerario_id;
 END$$
 
+-- Uso interno: tras borrar paradas EN CASCADA (al quitar un favorito o un atractivo),
+-- vuelve a numerar el orden (1,2,4 → 1,2,3) y recalcula los totales de los itinerarios
+-- listados en la tabla temporal tmp_itinerarios (la crea quien llama a este procedimiento).
+CREATE PROCEDURE sp_recalcular_itinerarios()
+BEGIN
+  DROP TEMPORARY TABLE IF EXISTS tmp_orden_nuevo;
+  CREATE TEMPORARY TABLE tmp_orden_nuevo AS
+    SELECT d.id, ROW_NUMBER() OVER (PARTITION BY d.itinerario_id ORDER BY d.orden) AS nuevo_orden
+      FROM tbl_detalle_itinerario d JOIN tmp_itinerarios t ON t.id = d.itinerario_id;
+  UPDATE tbl_detalle_itinerario d JOIN tmp_orden_nuevo o ON o.id = d.id SET d.orden = d.orden + 100000;
+  UPDATE tbl_detalle_itinerario d JOIN tmp_orden_nuevo o ON o.id = d.id SET d.orden = o.nuevo_orden;
+  DROP TEMPORARY TABLE IF EXISTS tmp_orden_nuevo;
+
+  UPDATE tbl_itinerario i JOIN tmp_itinerarios t ON t.id = i.id
+     SET i.duracion_horas = (SELECT IFNULL(SUM(tiempo_estimado_horas), 0) FROM tbl_detalle_itinerario WHERE itinerario_id = i.id),
+         i.costo_total    = (SELECT IFNULL(SUM(costo_parada), 0)          FROM tbl_detalle_itinerario WHERE itinerario_id = i.id);
+END$$
+
 -- Agrega una parada desde un favorito. El orden va al final y el costo se toma
--- del precio de entrada. El trigger trg_detalle_valida comprueba que el favorito sea del dueño.
+-- del precio de entrada. El favorito debe ser del dueño (y el trigger trg_detalle_valida lo vuelve a exigir).
 CREATE PROCEDURE sp_agregar_parada(
   IN p_usuario_id INT, IN p_itinerario_id INT, IN p_favorito_id INT, IN p_tiempo_horas DECIMAL(4,2))
 BEGIN
@@ -616,6 +657,9 @@ BEGIN
   DECLARE v_costo DECIMAL(8,2);
 
   CALL sp_validar_itinerario(p_usuario_id, p_itinerario_id);
+  IF NOT EXISTS (SELECT 1 FROM tbl_atractivo_favorito WHERE id = p_favorito_id AND usuario_id = p_usuario_id) THEN
+    SIGNAL SQLSTATE '45404' SET MESSAGE_TEXT = 'Favorito no encontrado';
+  END IF;
   IF EXISTS (SELECT 1 FROM tbl_detalle_itinerario
               WHERE itinerario_id = p_itinerario_id AND atractivo_favorito_id = p_favorito_id) THEN
     SIGNAL SQLSTATE '45409' SET MESSAGE_TEXT = 'Ese lugar ya está en el itinerario';
@@ -629,6 +673,12 @@ BEGIN
   SELECT a.precio_entrada INTO v_costo
     FROM tbl_atractivo_favorito f JOIN tbl_atractivo a ON a.id = f.atractivo_id
    WHERE f.id = p_favorito_id;
+
+  -- Que los totales no superen lo que cabe en las columnas del itinerario
+  IF (SELECT duracion_horas FROM tbl_itinerario WHERE id = p_itinerario_id) + IFNULL(p_tiempo_horas, 1) > 999.99
+     OR (SELECT costo_total FROM tbl_itinerario WHERE id = p_itinerario_id) + IFNULL(v_costo, 0) > 999999.99 THEN
+    SIGNAL SQLSTATE '45000' SET MESSAGE_TEXT = 'El itinerario superó el máximo de horas o de costo';
+  END IF;
 
   INSERT INTO tbl_detalle_itinerario (itinerario_id, atractivo_favorito_id, orden, tiempo_estimado_horas, costo_parada)
   VALUES (p_itinerario_id, p_favorito_id, v_orden, IFNULL(p_tiempo_horas, 1.00), IFNULL(v_costo, 0));
@@ -685,7 +735,7 @@ BEGIN
   -- 2) Calcular el nuevo orden en una tabla temporal
   DROP TEMPORARY TABLE IF EXISTS tmp_orden;
   CREATE TEMPORARY TABLE tmp_orden AS
-    SELECT id, ROW_NUMBER() OVER (ORDER BY distancia_km, id) AS nuevo_orden
+    SELECT id, ROW_NUMBER() OVER (ORDER BY distancia_km IS NULL, distancia_km, id) AS nuevo_orden  -- sin coordenadas: al final
       FROM tbl_detalle_itinerario WHERE itinerario_id = p_itinerario_id;
 
   -- 3) Aplicar el orden (primero se mueve fuera de rango para no chocar con la regla UNIQUE)
@@ -713,16 +763,20 @@ END$$
 -- =====================================================================
 
 -- El trigger trg_resena_valida exige que el lugar se haya visitado en ese itinerario.
+-- Cada turista reseña un atractivo UNA sola vez (aunque lo visite en varios itinerarios),
+-- para que nadie pueda inflar la calificación creando itinerarios repetidos.
 CREATE PROCEDURE sp_registrar_resena(
   IN p_usuario_id INT, IN p_itinerario_id INT, IN p_atractivo_id INT,
   IN p_puntuacion TINYINT, IN p_comentario VARCHAR(500))
 BEGIN
   CALL sp_validar_itinerario(p_usuario_id, p_itinerario_id);
+  CALL sp_validar_atractivo(p_atractivo_id);
   IF p_puntuacion < 1 OR p_puntuacion > 5 THEN
     SIGNAL SQLSTATE '45000' SET MESSAGE_TEXT = 'La puntuación debe ser de 1 a 5';
   END IF;
-  IF EXISTS (SELECT 1 FROM tbl_resena WHERE itinerario_id = p_itinerario_id AND atractivo_id = p_atractivo_id) THEN
-    SIGNAL SQLSTATE '45409' SET MESSAGE_TEXT = 'Ya reseñaste este atractivo en este itinerario';
+  IF EXISTS (SELECT 1 FROM tbl_resena r JOIN tbl_itinerario i ON i.id = r.itinerario_id
+              WHERE i.usuario_id = p_usuario_id AND r.atractivo_id = p_atractivo_id) THEN
+    SIGNAL SQLSTATE '45409' SET MESSAGE_TEXT = 'Ya reseñaste este atractivo';
   END IF;
   INSERT INTO tbl_resena (itinerario_id, atractivo_id, puntuacion, comentario)
   VALUES (p_itinerario_id, p_atractivo_id, p_puntuacion, p_comentario);

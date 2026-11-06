@@ -17,6 +17,7 @@ if (process.env.JWT_SECRET.length < 32) {
 }
 
 export const env = {
+  produccion: process.env.NODE_ENV === 'production',
   port: Number(process.env.PORT || 3000),
   db: {
     host: process.env.DB_HOST,

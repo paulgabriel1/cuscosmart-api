@@ -4,6 +4,15 @@ import rateLimit from 'express-rate-limit';
 
 const respuesta = (message) => ({ ok: false, error: { code: 'TOO_MANY_REQUESTS', message } });
 
+// Toda la API: 300 peticiones por minuto por IP (frena a quien intente saturar el servidor)
+export const limiteGeneral = rateLimit({
+  windowMs: 60 * 1000,
+  limit: 300,
+  standardHeaders: 'draft-7',
+  legacyHeaders: false,
+  message: respuesta('Demasiadas peticiones. Espera un minuto.'),
+});
+
 // Login y registro: 20 intentos cada 15 minutos por IP
 export const limiteAuth = rateLimit({
   windowMs: 15 * 60 * 1000,

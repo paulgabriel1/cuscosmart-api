@@ -79,7 +79,7 @@ Abre **http://localhost:5173**.
 cd $HOME\Desktop\cuscosmart-api
 npm run db:reset
 # reinicia la API (Ctrl + C y npm run dev)
-npm run test:api       # Esperado: 107 peticiones · 326 pruebas aprobadas · 0 fallidas
+npm run test:api       # Esperado: 116 peticiones · 353 pruebas aprobadas · 0 fallidas
 ```
 
 Para usar Postman: **Import** → `postman/cuscosmart.collection.json` → **Run collection**. Deja seleccionado **No Environment**.

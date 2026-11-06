@@ -106,6 +106,7 @@ const catalogo = carpeta('01 Catálogo', 'Categorías, zonas y atractivos: leer 
     status: 200, tests: [t('Todos son miradores', `${D}.forEach((a) => pm.expect(a.categoria_id).to.eql(4))`)],
   }),
   req('GET /atractivos?buscar=sal', 'GET', '/atractivos?buscar=sal', { status: 200, tests: [eq('Encuentra las Salineras', `${D}[0].nombre`, 'Salineras de Maras')] }),
+  req('GET /atractivos?page=1e308 (no rompe la API)', 'GET', '/atractivos?page=1e308', { status: 400, tests: [code('VALIDATION_ERROR')] }),
   req('GET /atractivos con filtros inválidos', 'GET', '/atractivos?limit=500&categoria_id=abc', { status: 400, tests: [code('VALIDATION_ERROR')] }),
   req('GET /atractivos/cercanos (Plaza, 0.5 km)', 'GET', '/atractivos/cercanos?lat=-13.5167&lng=-71.9788&radio_km=0.5', {
     status: 200, tests: [eq('El primero es la Plaza', `${D}[0].nombre`, 'Plaza de Armas'),
@@ -136,6 +137,9 @@ const catalogo = carpeta('01 Catálogo', 'Categorías, zonas y atractivos: leer 
   }),
   req('POST horario con cierre antes de apertura', 'POST', '/atractivos/{{idAtractivo}}/horarios', {
     auth: 'admin', status: 422, body: { dia_semana: 'Lunes', hora_apertura: '18:00', hora_cierre: '08:00' }, tests: [code('BUSINESS_RULE')],
+  }),
+  req('POST foto con javascript:', 'POST', '/atractivos/{{idAtractivo}}/fotos', {
+    auth: 'admin', status: 400, body: { url_foto: 'javascript:alert(1)' }, tests: [code('VALIDATION_ERROR')],
   }),
   req('POST foto', 'POST', '/atractivos/{{idAtractivo}}/fotos', {
     auth: 'admin', status: 201, body: { url_foto: 'img/san-cristobal.jpg', descripcion: 'Vista al atardecer' }, tests: [guardar('idFoto', `${D}.id`)],
@@ -172,6 +176,9 @@ const itinerarios = carpeta('03 Itinerarios e IA', 'Paradas desde favoritos, ord
     tests: [guardar('idIti', `${D}.id`), eq('Sin paradas', `${D}.paradas.length`, 0), eq('Costo 0', `${D}.costo_total`, 0)],
   }),
   req('POST /itinerarios sin nombre', 'POST', '/itinerarios', { auth: 'ana', status: 400, body: { ...hotel }, tests: [code('VALIDATION_ERROR')] }),
+  req('POST /itinerarios con inicio fuera del Perú', 'POST', '/itinerarios', {
+    auth: 'ana', status: 400, body: { nombre: 'Madrid', latitud_inicio: 40.4168, longitud_inicio: -3.7038 }, tests: [code('VALIDATION_ERROR')],
+  }),
   req('POST /itinerarios solo con latitud', 'POST', '/itinerarios', { auth: 'ana', status: 400, body: { nombre: 'Prueba', latitud_inicio: -13.5 }, tests: [code('VALIDATION_ERROR')] }),
   req('Agregar parada Qenqo (1.5 h)', 'POST', '/itinerarios/{{idIti}}/paradas', {
     auth: 'ana', status: 201, body: '{\n  "favorito_id": {{favQenqo}},\n  "tiempo_estimado_horas": 1.5\n}',
@@ -184,8 +191,8 @@ const itinerarios = carpeta('03 Itinerarios e IA', 'Paradas desde favoritos, ord
   req('Agregar parada repetida', 'POST', '/itinerarios/{{idIti}}/paradas', { auth: 'ana', status: 409, body: '{\n  "favorito_id": {{favPlaza}}\n}', tests: [code('DUPLICATE')] }),
   req('Ver itinerario ajeno', 'GET', '/itinerarios/{{idIti}}', { auth: 'nuevo', status: 404, tests: [code('NOT_FOUND')] }),
   req('Itinerario del nuevo sin punto de inicio', 'POST', '/itinerarios', { auth: 'nuevo', status: 201, body: { nombre: 'Sin rumbo' }, tests: [guardar('idItiNuevo', `${D}.id`)] }),
-  req('Parada con favorito de otra persona (trigger)', 'POST', '/itinerarios/{{idItiNuevo}}/paradas', {
-    auth: 'nuevo', status: 422, body: '{\n  "favorito_id": {{favPlaza}}\n}', tests: [code('BUSINESS_RULE')],
+  req('Parada con favorito de otra persona (404: no es tuyo)', 'POST', '/itinerarios/{{idItiNuevo}}/paradas', {
+    auth: 'nuevo', status: 404, body: '{\n  "favorito_id": {{favPlaza}}\n}', tests: [code('NOT_FOUND')],
   }),
   req('Ordenar sin paradas', 'POST', '/itinerarios/{{idItiNuevo}}/ordenar-ia', { auth: 'nuevo', status: 422, tests: [code('BUSINESS_RULE')] }),
   req('Parada propia en el itinerario del nuevo', 'POST', '/itinerarios/{{idItiNuevo}}/paradas', { auth: 'nuevo', status: 201, body: '{\n  "favorito_id": {{favNuevo}}\n}' }),
@@ -220,6 +227,18 @@ const itinerarios = carpeta('03 Itinerarios e IA', 'Paradas desde favoritos, ord
   }),
   req('Quitar parada Qenqo (compacta el orden)', 'DELETE', '/itinerarios/{{idIti}}/paradas/{{paradaQenqo}}', {
     auth: 'ana', status: 200, tests: [eq('Queda 1 parada', `${D}.paradas.length`, 1), eq('Con orden 1', `${D}.paradas[0].orden`, 1), eq('Costo 0', `${D}.costo_total`, 0)],
+  }),
+  req('Agregar parada Catedral (favorito 3 de Ana)', 'POST', '/itinerarios/{{idIti}}/paradas', {
+    auth: 'ana', status: 201, body: { favorito_id: 3 }, tests: [guardar('paradaCatedral', `${D}.paradas[1].parada_id`)],
+  }),
+  req('Marcar Catedral visitada', 'PATCH', '/itinerarios/{{idIti}}/paradas/{{paradaCatedral}}/visitado', { auth: 'ana', status: 200 }),
+  req('Reseñar otra vez la Catedral en otro viaje (anti inflado)', 'POST', '/itinerarios/{{idIti}}/resenas', {
+    auth: 'ana', status: 409, body: { atractivo_id: 3, puntuacion: 5 },
+    tests: [code('DUPLICATE'), t('Una reseña por turista', `pm.expect(pm.response.json().error.message).to.eql('Ya reseñaste este atractivo')`)],
+  }),
+  req('Quitar el favorito Plaza (cae su parada en cascada)', 'DELETE', '/favoritos/{{favPlaza}}', { auth: 'ana', status: 204 }),
+  req('El orden se compacta tras la cascada', 'GET', '/itinerarios/{{idIti}}', {
+    auth: 'ana', status: 200, tests: [eq('Queda 1 parada', `${D}.paradas.length`, 1), eq('Catedral pasa al orden 1', `${D}.paradas[0].orden`, 1), eq('Es la Catedral', `${D}.paradas[0].atractivo`, 'Catedral del Cusco')],
   }),
   req('DELETE /itinerarios/{{idIti}}', 'DELETE', '/itinerarios/{{idIti}}', { auth: 'ana', status: 204 }),
   req('La calificación de la Plaza se recalcula', 'GET', '/atractivos/5', { status: 200, tests: [eq('Vuelve a 0', `${D}.calificacion`, 0)] }),
@@ -266,6 +285,7 @@ const admin = carpeta('05 Administración', 'Usuarios y moderación de reseñas 
   req('DELETE /resenas/999', 'DELETE', '/resenas/999', { auth: 'admin', status: 404 }),
   req('DELETE usuario nuevo', 'DELETE', '/usuarios/{{idNuevo}}', { auth: 'admin', status: 204 }),
   req('DELETE usuario nuevo otra vez', 'DELETE', '/usuarios/{{idNuevo}}', { auth: 'admin', status: 404 }),
+  req('El token de una cuenta eliminada deja de servir', 'GET', '/auth/me', { auth: 'nuevo', status: 401, tests: [code('INVALID_TOKEN')] }),
 ]);
 
 // ---------- 06 Seguridad ----------
@@ -302,7 +322,7 @@ const coleccion = {
   variable: [
     { key: 'baseUrl', value: 'http://localhost:3000/api/v1' },
     ...['tokenAdmin', 'tokenAna', 'tokenNuevo', 'correoNuevo', 'idNuevo', 'idCategoria', 'idZona', 'idAtractivo', 'idHorario', 'idFoto',
-      'favPlaza', 'favQenqo', 'favNuevo', 'idIti', 'idItiNuevo', 'paradaPlaza', 'paradaQenqo', 'idPregunta'].map((key) => ({ key, value: '' })),
+      'favPlaza', 'favQenqo', 'favNuevo', 'idIti', 'idItiNuevo', 'paradaPlaza', 'paradaQenqo', 'paradaCatedral', 'idPregunta'].map((key) => ({ key, value: '' })),
   ],
   item: [auth, catalogo, favoritos, itinerarios, asistente, admin, seguridad],
 };

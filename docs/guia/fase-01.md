@@ -15,7 +15,7 @@ El SQL original del grupo estaba en un solo archivo. Lo separamos por **responsa
 | `schema.sql` | Crea la base y las **11 tablas** del diagrama ER (no cambió nada) | Solo si cambia el diagrama |
 | `logica.sql` | **Función** Haversine, **4 triggers** y **51 procedimientos** | Sí, cuando hay lógica nueva |
 | `seed.sql` | Datos de prueba: 14 atractivos, 8 preguntas, 2 usuarios y un viaje de ejemplo | Sí, para agregar datos |
-| `usuario.sql` | Crea `cuscosmart_user` con permisos mínimos | Casi nunca |
+| `usuario.sql` | Crea `cuscosmart_user` con **un solo permiso: EXECUTE** | Casi nunca |
 | `verificacion.sql` | Cuenta tablas, procedimientos, triggers y filas para confirmar | No |
 | `cuscosmart_todo.sql` | **Une todo lo anterior** en orden. Es el que se importa | No: se regenera (ver 1.6) |
 
@@ -61,7 +61,7 @@ CALL sp_nombre_del_procedimiento(parámetros);
 
 **¿Por qué?**
 1. **Una sola fuente de verdad.** Las reglas se cumplen igual si alguien usa la API, phpMyAdmin u otra app.
-2. **Seguridad.** La API usa un usuario con permiso de *ejecutar* procedimientos y no puede borrar tablas (prueba 12 de la sección 1.7).
+2. **Seguridad.** La API usa un usuario que **solo puede ejecutar procedimientos**: no puede leer ni modificar tablas directamente (prueba 10 de la sección 1.7).
 3. **Menos código en Node.** La API valida, autentica y traduce errores; MySQL decide las reglas.
 
 ---
@@ -178,7 +178,7 @@ La contraseña es `Cusco2026*`. Luego prueba (resultado esperado a la derecha):
 | 7 | `CALL sp_registrar_resena(2,1,1,4,'x');` | `ERROR 1644 (45000): Solo puedes reseñar atractivos que visitaste…` |
 | 8 | `CALL sp_eliminar_categoria(1);` | `ERROR 1451`: la categoría tiene atractivos |
 | 9 | `CALL sp_buscar_pregunta_frecuente('cuanto cuesta el boleto');` | "El boleto integral cuesta S/ 130…" |
-| 10 | `DROP TABLE tbl_foto;` | `ERROR 1142: DROP command denied`. ✅ La API no puede destruir nada |
+| 10 | `SELECT * FROM tbl_usuario;` | `ERROR 1142: SELECT command denied`. ✅ La API solo puede usar procedimientos |
 
 Sal con `exit`. Si hiciste cambios de prueba, vuelve a importar (1.2) para dejar los datos limpios.
 
@@ -221,7 +221,7 @@ git push
 > Un trigger se ejecuta **solo** cuando ocurre un evento (INSERT, UPDATE o DELETE) en una tabla. Un procedimiento se ejecuta cuando alguien lo **llama** con `CALL`. Usamos triggers para lo que debe cumplirse siempre (reseñas válidas, promedio actualizado) y procedimientos para las operaciones de la app.
 
 **5. ¿Por qué la API no se conecta como `root`?**
-> Por el **principio de mínimo privilegio**. `cuscosmart_user` solo puede hacer SELECT, INSERT, UPDATE, DELETE y EXECUTE en `cuscosmart_db`. Si alguien roba la contraseña del `.env`, no puede borrar tablas ni tocar otras bases.
+> Por el **principio de mínimo privilegio**. `cuscosmart_user` solo tiene **EXECUTE** en `cuscosmart_db`. Si alguien roba la contraseña del `.env`, ni siquiera puede hacer un SELECT: solo puede usar los procedimientos, que validan reglas y dueño. Los procedimientos corren con los permisos de quien los creó (SQL SECURITY DEFINER), por eso sí pueden tocar las tablas.
 
 **6. ¿Por qué cuando pido un itinerario ajeno sale 404 y no 403?**
 > Porque un 403 confirmaría que ese itinerario **existe**. Con 404, un atacante no puede adivinar qué IDs están en uso. Es una práctica común de seguridad.
