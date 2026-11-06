@@ -1,5 +1,6 @@
 import { Router } from 'express';
 import { pool } from '../config/db.js';
+import authRoutes from './auth.routes.js';
 
 const router = Router();
 
@@ -15,5 +16,7 @@ router.get('/health', async (req, res) => {
   }
   res.status(db === 'up' ? 200 : 503).json({ ok: db === 'up', data: { status: 'up', db } });
 });
+
+router.use('/auth', authRoutes);
 
 export default router;
