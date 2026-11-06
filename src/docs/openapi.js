@@ -36,7 +36,7 @@ const paths = {
   // ---------- Autenticación ----------
   '/auth/registro': {
     post: {
-      tags: ['Autenticación'], summary: 'Registrar turista', description: 'Devuelve el token. Límite: 20 intentos cada 15 minutos.', ...publico,
+      tags: ['Autenticación'], summary: 'Registrar turista', description: 'Devuelve el token. Límite: 10 intentos fallidos cada 15 minutos por correo.', ...publico,
       requestBody: cuerpo('Registro', { nombre_completo: 'Luis Mamani', correo: 'luis@mail.com', contrasena: 'Cusco2026', telefono: '984123456' }),
       responses: { ...ok('Registrado', 201), ...resp(400, 409, 429) },
     },
@@ -48,7 +48,23 @@ const paths = {
       responses: { ...ok('Token y usuario'), ...resp(400, 401, 429) },
     },
   },
-  '/auth/me': { get: { tags: ['Autenticación'], summary: 'Mi perfil', responses: { ...ok('Usuario del token'), ...resp(401) } } },
+  '/auth/google': {
+    post: {
+      tags: ['Autenticación'], summary: 'Entrar con Google',
+      description: 'Recibe el `credential` (ID token) que entrega el botón de Google. Si el correo no existe, crea la cuenta como TURISTA. Necesita `GOOGLE_CLIENT_ID` en el .env.', ...publico,
+      requestBody: cuerpo('Google', { credential: 'eyJhbGciOiJSUzI1NiIs...' }),
+      responses: { ...ok('Token y usuario'), ...resp(400, 401, 429) },
+    },
+  },
+  '/auth/config': { get: { tags: ['Autenticación'], summary: 'Configuración pública (ID de cliente de Google)', ...publico, responses: ok('Configuración') } },
+  '/auth/me': {
+    get: { tags: ['Autenticación'], summary: 'Mi perfil (con totales de favoritos, viajes y reseñas)', responses: { ...ok('Usuario del token'), ...resp(401) } },
+    put: {
+      tags: ['Autenticación'], summary: 'Editar mi nombre y teléfono',
+      requestBody: cuerpo('Perfil', { nombre_completo: 'Ana Quispe Huamán', telefono: '984123456' }),
+      responses: { ...ok('Perfil actualizado'), ...resp(400, 401) },
+    },
+  },
 
   // ---------- Catálogo ----------
   ...crudCatalogo('Categorias', 'Categoria', { nombre: 'Mirador', descripcion: 'Vistas panorámicas' }),
@@ -201,6 +217,8 @@ const schemas = {
   Error: obj({ ok: { type: 'boolean', example: false }, error: obj({ code: txt(), message: txt(), details: { type: 'array', items: obj({ campo: txt(), mensaje: txt() }) } }) }),
   Registro: obj({ nombre_completo: txt({ minLength: 3, maxLength: 150 }), correo: txt({ format: 'email' }), contrasena: txt({ minLength: 8, maxLength: 72, description: 'Con letras y números' }), telefono: txt({ maxLength: 20 }) }, ['nombre_completo', 'correo', 'contrasena']),
   Login: obj({ correo: txt({ format: 'email' }), contrasena: txt() }, ['correo', 'contrasena']),
+  Google: obj({ credential: txt({ description: 'ID token que entrega el botón de Google' }) }, ['credential']),
+  Perfil: obj({ nombre_completo: txt({ minLength: 3, maxLength: 150 }), telefono: txt({ maxLength: 20, nullable: true }) }, ['nombre_completo']),
   Categoria: obj({ nombre: txt({ minLength: 2, maxLength: 100 }), descripcion: txt({ maxLength: 255, nullable: true }) }, ['nombre']),
   Zona: obj({ nombre: txt({ minLength: 2, maxLength: 100 }), ciudad: txt({ maxLength: 100, nullable: true }) }, ['nombre']),
   Atractivo: obj({
@@ -229,7 +247,7 @@ const responses = {
   E404: error('No existe o no es tuyo', 'NOT_FOUND', 'Itinerario no encontrado'),
   E409: error('Repetido o en uso', 'DUPLICATE', 'Ese atractivo ya está en tus favoritos'),
   E422: error('Regla de negocio (procedimiento o trigger)', 'BUSINESS_RULE', 'Solo puedes reseñar atractivos que visitaste en tu itinerario'),
-  E429: error('Demasiados intentos', 'TOO_MANY_REQUESTS', 'Demasiados intentos. Espera 15 minutos.'),
+  E429: error('Demasiados intentos', 'TOO_MANY_REQUESTS', 'Demasiados intentos fallidos con este correo. Espera 15 minutos.'),
 };
 
 export const openapi = {

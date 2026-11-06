@@ -12,3 +12,15 @@ export async function login(req, res) {
 export async function me(req, res) {
   res.json({ ok: true, data: await servicio.perfil(req.user.id) });
 }
+
+export async function actualizarMe(req, res) {
+  res.json({ ok: true, data: await servicio.actualizarPerfil(req.user.id, req.body) });
+}
+
+export async function google(req, res) {
+  res.json({ ok: true, data: await servicio.loginGoogle(req.body) });
+}
+
+export function config(_req, res) {
+  res.json({ ok: true, data: servicio.configuracionPublica() });
+}

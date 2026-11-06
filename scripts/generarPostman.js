@@ -75,12 +75,22 @@ const auth = carpeta('00 Autenticación', 'Genera los tokens de admin, Ana (turi
   req('GET /auth/me', 'GET', '/auth/me', { auth: 'ana', status: 200, tests: [eq('Es Ana', `${D}.correo`, 'ana@mail.com')] }),
   req('GET /auth/me sin token', 'GET', '/auth/me', { status: 401, tests: [code('NO_TOKEN')] }),
   req('GET /auth/me con token inválido', 'GET', '/auth/me', { auth: 'malo', status: 401, tests: [code('INVALID_TOKEN')] }),
+  req('GET /auth/me trae totales', 'GET', '/auth/me', {
+    auth: 'ana', status: 200, tests: [t('Tiene favoritos, viajes y reseñas', `['favoritos','viajes','resenas'].forEach((k) => pm.expect(typeof ${D}[k]).to.eql('number'))`)],
+  }),
+  req('PUT /auth/me (editar perfil)', 'PUT', '/auth/me', {
+    auth: 'ana', status: 200, body: { nombre_completo: 'Ana Quispe', telefono: '984123456' },
+    tests: [eq('Guarda el teléfono', `${D}.telefono`, '984123456')],
+  }),
+  req('PUT /auth/me con nombre corto', 'PUT', '/auth/me', { auth: 'ana', status: 400, body: { nombre_completo: 'A' }, tests: [code('VALIDATION_ERROR')] }),
+  req('GET /auth/config', 'GET', '/auth/config', { status: 200, tests: [t('Informa el ID de Google', `pm.expect('googleClientId' in ${D}).to.eql(true)`)] }),
+  req('POST /auth/google sin credential', 'POST', '/auth/google', { status: 400, body: {}, tests: [code('VALIDATION_ERROR')] }),
 ]);
 
 // ---------- 01 Catálogo ----------
 const atractivoNuevo = { nombre: 'Mirador de San Cristóbal', descripcion: 'Vista del centro histórico.', latitud: -13.5128, longitud: -71.9822, precio_entrada: 0, categoria_id: 4, zona_id: 1 };
 const catalogo = carpeta('01 Catálogo', 'Categorías, zonas y atractivos: leer es público, escribir es solo ADMIN.', [
-  req('GET /categorias', 'GET', '/categorias', { status: 200, tests: [eq('5 categorías', `${D}.length`, 5)] }),
+  req('GET /categorias', 'GET', '/categorias', { status: 200, tests: [eq('6 categorías', `${D}.length`, 6)] }),
   req('GET /categorias/1', 'GET', '/categorias/1', { status: 200, tests: [eq('Sitio arqueológico', `${D}.nombre`, 'Sitio arqueológico')] }),
   req('GET /categorias/999', 'GET', '/categorias/999', { status: 404, tests: [code('NOT_FOUND')] }),
   req('POST /categorias sin token', 'POST', '/categorias', { status: 401, body: { nombre: 'Parque' }, tests: [code('NO_TOKEN')] }),
@@ -100,7 +110,7 @@ const catalogo = carpeta('01 Catálogo', 'Categorías, zonas y atractivos: leer 
   req('DELETE /zonas/{{idZona}}', 'DELETE', '/zonas/{{idZona}}', { auth: 'admin', status: 204 }),
   req('DELETE /zonas/{{idZona}} otra vez', 'DELETE', '/zonas/{{idZona}}', { auth: 'admin', status: 404, tests: [code('NOT_FOUND')] }),
 
-  req('GET /atractivos', 'GET', '/atractivos', { status: 200, tests: [eq('Total 14', `${M}.total`, 14), eq('10 por página', `${D}.length`, 10), eq('2 páginas', `${M}.totalPages`, 2)] }),
+  req('GET /atractivos', 'GET', '/atractivos', { status: 200, tests: [eq('Total 27', `${M}.total`, 27), eq('10 por página', `${D}.length`, 10), eq('3 páginas', `${M}.totalPages`, 3)] }),
   req('GET /atractivos?page=2&limit=5', 'GET', '/atractivos?page=2&limit=5', { status: 200, tests: [eq('5 en la página 2', `${D}.length`, 5)] }),
   req('GET /atractivos?categoria_id=4', 'GET', '/atractivos?categoria_id=4', {
     status: 200, tests: [t('Todos son miradores', `${D}.forEach((a) => pm.expect(a.categoria_id).to.eql(4))`)],
@@ -115,7 +125,7 @@ const catalogo = carpeta('01 Catálogo', 'Categorías, zonas y atractivos: leer 
   }),
   req('GET /atractivos/cercanos sin coordenadas', 'GET', '/atractivos/cercanos', { status: 400, tests: [code('VALIDATION_ERROR')] }),
   req('GET /atractivos/2 (con horarios y fotos)', 'GET', '/atractivos/2', {
-    status: 200, tests: [eq('Qorikancha', `${D}.nombre`, 'Qorikancha'), eq('2 horarios', `${D}.horarios.length`, 2), eq('1 foto', `${D}.fotos.length`, 1)],
+    status: 200, tests: [eq('Qorikancha', `${D}.nombre`, 'Qorikancha'), eq('2 horarios', `${D}.horarios.length`, 2), eq('5 fotos', `${D}.fotos.length`, 5)],
   }),
   req('GET /atractivos/999', 'GET', '/atractivos/999', { status: 404, tests: [code('NOT_FOUND')] }),
   req('GET /atractivos/abc', 'GET', '/atractivos/abc', { status: 400, tests: [code('VALIDATION_ERROR')] }),
@@ -254,7 +264,7 @@ const asistente = carpeta('04 Asistente y preguntas frecuentes', 'Búsqueda FULL
     status: 200, body: { pregunta: 'xyzzy plutón' }, tests: [eq('No encontrada', `${D}.encontrada`, false), eq('3 sugerencias', `${D}.sugerencias.length`, 3)],
   }),
   req('Pregunta muy corta', 'POST', '/asistente/preguntar', { status: 400, body: { pregunta: 'a' }, tests: [code('VALIDATION_ERROR')] }),
-  req('GET /preguntas-frecuentes', 'GET', '/preguntas-frecuentes', { status: 200, tests: [eq('8 preguntas', `${D}.length`, 8)] }),
+  req('GET /preguntas-frecuentes', 'GET', '/preguntas-frecuentes', { status: 200, tests: [eq('20 preguntas', `${D}.length`, 20)] }),
   req('POST pregunta como turista', 'POST', '/preguntas-frecuentes', { auth: 'ana', status: 403, body: { pregunta: '¿Hay wifi?', respuesta: 'No' } }),
   req('POST pregunta (admin)', 'POST', '/preguntas-frecuentes', {
     auth: 'admin', status: 201, body: { pregunta: '¿Hay wifi en Moray?', respuesta: 'No, lleva datos móviles.', palabras_clave: 'wifi internet señal', atractivo_id: 13 },
@@ -290,18 +300,18 @@ const admin = carpeta('05 Administración', 'Usuarios y moderación de reseñas 
 
 // ---------- 06 Seguridad ----------
 const rafaga = [
-  '// Agota el límite (20 intentos / 15 min) enviando 20 logins fallidos antes de esta petición',
+  '// Agota el límite (10 intentos fallidos / 15 min por IP y correo) con un correo de prueba: así no bloquea a los usuarios reales',
   "const url = pm.collectionVariables.get('baseUrl') + '/auth/login';",
-  'for (let i = 0; i < 20; i++) {',
+  'for (let i = 0; i < 10; i++) {',
   "  pm.sendRequest({ url, method: 'POST', header: { 'Content-Type': 'application/json' },",
-  "    body: { mode: 'raw', raw: JSON.stringify({ correo: 'admin@cuscosmart.pe', contrasena: 'mala' }) } }, () => {});",
+  "    body: { mode: 'raw', raw: JSON.stringify({ correo: 'fuerza.bruta@prueba.pe', contrasena: 'mala' }) } }, () => {});",
   '}',
 ];
-const seguridad = carpeta('06 Seguridad', 'Errores generales y límite de intentos. El 429 bloquea el login 15 minutos: reinicia la API antes de volver a correr la colección.', [
+const seguridad = carpeta('06 Seguridad', 'Errores generales y límite de intentos. El 429 solo bloquea el correo de prueba fuerza.bruta@prueba.pe por 15 minutos.', [
   req('JSON mal formado', 'POST', '/auth/login', { status: 400, body: '{"correo": ', tests: [code('INVALID_JSON')] }),
   req('Ruta inexistente', 'GET', '/no-existe', { status: 404, tests: [code('NOT_FOUND')] }),
   req('Login tras muchos intentos (429)', 'POST', '/auth/login', {
-    status: 429, body: { correo: 'admin@cuscosmart.pe', contrasena: 'mala' }, pre: rafaga, tests: [code('TOO_MANY_REQUESTS')],
+    status: 429, body: { correo: 'fuerza.bruta@prueba.pe', contrasena: 'mala' }, pre: rafaga, tests: [code('TOO_MANY_REQUESTS')],
   }),
 ]);
 

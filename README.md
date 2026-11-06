@@ -3,7 +3,7 @@
 Guía turística inteligente del Cusco: atractivos con mapa, favoritos, **itinerarios ordenados por IA** (de la parada más cercana a la más lejana), **reseñas verificadas** (solo de lugares visitados) y un **asistente** de preguntas frecuentes.
 
 > Proyecto del curso **Fullstack Developer Software, SENATI**.
-> Integrantes: **Gabriel Paul Alata Condori** · **Rodrigo Ccahuana Mayo** · **Mademil Lucero Alata Condori**
+> Integrantes: **Gabriel Paul Alata Condori** · **Rodrigo Ccahuana Mayo** · **Elizabeth Flores Vargas**
 
 ## Tabla de contenido
 1. [Tecnologías](#tecnologías)
