@@ -69,7 +69,7 @@ export async function loginGoogle({ credential }) {
   const encontrado = await llamarUno('sp_usuario_por_correo', [correo]);
   if (encontrado) {
     const { contrasena: _omitida, ...usuario } = encontrado;
-    return { token: firmarToken(usuario), usuario, nuevo: false };
+    return { token: firmarToken(usuario), usuario, nuevo: false, foto: datos.picture ?? null };
   }
   // Primera vez: se registra con los datos de Google y una contraseña aleatoria
   // (la persona siempre entrará con Google; nadie conoce esa contraseña).
