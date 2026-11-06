@@ -34,6 +34,7 @@ node -e "console.log(require('crypto').randomBytes(48).toString('hex'))"
 ```
 
 3. Abre el archivo `.env` (`code .env`) y pega el texto que imprimió el último comando en `JWT_SECRET=`. Los demás valores ya sirven tal cual.
+   - **Opcional — Entrar con Google:** pega tu ID de cliente en `GOOGLE_CLIENT_ID=` (cómo crearlo: [fase 10](guia/fase-10.md#activar-el-login-con-google-5-minutos)). Si lo dejas vacío, todo funciona y el botón de Google sale desactivado.
 4. Crea la base de datos y arranca la API:
 
 ```powershell
@@ -68,6 +69,8 @@ npm run dev
 
 Abre **http://localhost:5173**.
 
+> Las 87 fotos ya vienen en `public/img` (no hay que descargar nada). El mapa necesita internet (OpenStreetMap).
+
 | Rol | Correo | Contraseña |
 | --- | --- | --- |
 | ADMIN | admin@cuscosmart.pe | Admin12345 |
@@ -79,7 +82,7 @@ Abre **http://localhost:5173**.
 cd $HOME\Desktop\cuscosmart-api
 npm run db:reset
 # reinicia la API (Ctrl + C y npm run dev)
-npm run test:api       # Esperado: 116 peticiones · 353 pruebas aprobadas · 0 fallidas
+npm run test:api       # Esperado: 121 peticiones · 368 pruebas aprobadas · 0 fallidas
 ```
 
 Para usar Postman: **Import** → `postman/cuscosmart.collection.json` → **Run collection**. Deja seleccionado **No Environment**.
@@ -87,8 +90,9 @@ Para usar Postman: **Import** → `postman/cuscosmart.collection.json` → **Run
 ## 6. Cada día de trabajo
 
 1. XAMPP → **Start** MySQL.
-2. `cd $HOME\Desktop\cuscosmart-api` y luego `git pull` y `npm run dev`.
-3. En otra ventana: `cd $HOME\Desktop\cuscosmart-web` y luego `git pull` y `npm run dev`.
+2. `cd $HOME\Desktop\cuscosmart-api` y luego `git pull`, `npm install` y `npm run dev`.
+3. En otra ventana: `cd $HOME\Desktop\cuscosmart-web` y luego `git pull`, `npm install` y `npm run dev`.
+4. Si el `git pull` trajo cambios en `database/`, ejecuta una vez `npm run db:reset` en la API.
 
 ## 7. Problemas comunes
 
@@ -100,6 +104,10 @@ Para usar Postman: **Import** → `postman/cuscosmart.collection.json` → **Run
 | `Access denied for user 'cuscosmart_user'` | Ejecuta `npm run db:reset`, que crea el usuario |
 | MySQL no arranca o dice `ibdata1 must be writable` | Hay otro MySQL abierto: ciérralo en XAMPP o en el Administrador de tareas (`mysqld.exe`) |
 | `EADDRINUSE :::3000` | Ya hay otra API abierta: cierra esa ventana |
-| Login responde 429 | Pasaste el límite de intentos: reinicia la API |
+| Login responde 429 | 10 intentos fallidos con ese correo: espera 15 min o reinicia la API |
+| `Cannot find package 'google-auth-library'` | Faltó `npm install` en la API después de `git pull` |
+| El botón de Google sale gris | Falta `GOOGLE_CLIENT_ID` en el `.env` (es opcional) |
+| No salen las fotos nuevas o faltan atractivos | Ejecuta `npm run db:reset` en la API (carga los 27 atractivos) |
+| `npm run test:api` falla con 429 | La corriste dos veces seguidas: reinicia la API y vuelve a correrla una vez |
 | La web dice "No se pudo conectar con la API" | La API no está encendida (paso 3) |
 | Cambié `.env` y no lo toma | Detén la API con **Ctrl + C** y vuelve a `npm run dev` |

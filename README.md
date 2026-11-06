@@ -29,7 +29,7 @@ Guía turística inteligente del Cusco: atractivos con mapa, favoritos, **itiner
 | Autenticación | JWT (jsonwebtoken) + bcryptjs |
 | Seguridad | helmet, cors, express-rate-limit |
 | Documentación | Swagger (OpenAPI 3) en `/api/v1/docs` |
-| Pruebas | Colección Postman con 353 pruebas automáticas |
+| Pruebas | Colección Postman con 368 pruebas automáticas |
 
 ## Arquitectura
 
@@ -196,7 +196,7 @@ Cada regla dice **dónde vive**, porque es ahí donde se cambia.
 ```powershell
 npm run db:reset     # datos limpios
 npm run dev          # (en otra ventana) API recién iniciada
-npm run test:api     # 116 peticiones · 353 pruebas
+npm run test:api     # 121 peticiones · 368 pruebas
 ```
 
 En Postman: **Import** → `postman/cuscosmart.collection.json` → **Run collection**. La colección ya trae la URL y guarda sola los tokens y los IDs.
