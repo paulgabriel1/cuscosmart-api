@@ -2,6 +2,7 @@ import { Router } from 'express';
 import { pool } from '../config/db.js';
 import authRoutes from './auth.routes.js';
 import { categorias, zonas, atractivos } from './catalogo.routes.js';
+import { favoritos, itinerarios } from './viaje.routes.js';
 
 const router = Router();
 
@@ -22,5 +23,7 @@ router.use('/auth', authRoutes);
 router.use('/categorias', categorias);
 router.use('/zonas', zonas);
 router.use('/atractivos', atractivos);
+router.use('/favoritos', favoritos);
+router.use('/itinerarios', itinerarios);
 
 export default router;

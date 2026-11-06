@@ -785,6 +785,10 @@ BEGIN
   DECLARE v_costo DECIMAL(8,2);
 
   CALL sp_validar_itinerario(p_usuario_id, p_itinerario_id);
+  IF EXISTS (SELECT 1 FROM tbl_detalle_itinerario
+              WHERE itinerario_id = p_itinerario_id AND atractivo_favorito_id = p_favorito_id) THEN
+    SIGNAL SQLSTATE '45409' SET MESSAGE_TEXT = 'Ese lugar ya está en el itinerario';
+  END IF;
   IF p_tiempo_horas IS NOT NULL AND (p_tiempo_horas <= 0 OR p_tiempo_horas > 24) THEN
     SIGNAL SQLSTATE '45000' SET MESSAGE_TEXT = 'El tiempo estimado debe estar entre 0 y 24 horas';
   END IF;
