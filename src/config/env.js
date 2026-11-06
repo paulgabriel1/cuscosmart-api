@@ -31,4 +31,6 @@ export const env = {
     expiresIn: process.env.JWT_EXPIRES_IN || '8h',
   },
   corsOrigin: process.env.CORS_ORIGIN || 'http://localhost:5173',
+  // Opcional: sin este valor el botón "Continuar con Google" no se activa
+  googleClientId: process.env.GOOGLE_CLIENT_ID || '',
 };

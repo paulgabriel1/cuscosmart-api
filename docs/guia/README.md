@@ -28,6 +28,7 @@ Esta es la guía paso a paso para construir **CuscoSmart IA desde cero**. Sigue 
 | [7](fase-07.md) | Reseñas y asistente | Reseñas verificadas y preguntas frecuentes |
 | [8](fase-08.md) | Postman completo y Swagger | Colección con pruebas automáticas y documentación |
 | [9](fase-09.md) | Front React con mapa (repo `cuscosmart-web`) | Web completa probada de punta a punta (23 pasos) |
+| [10](fase-10.md) | Login con Google, más lugares y front moderno | Galería con zoom, mapa "cerca de mí", chat flotante, 6 idiomas y modo oscuro |
 | 9 | Front con React y mapa | Web con mapa, rutas y panel de administración |
 
 ## Idea general del proyecto

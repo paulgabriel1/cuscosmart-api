@@ -26,6 +26,7 @@ DROP TRIGGER   IF EXISTS trg_resena_calificacion_del;
 DROP PROCEDURE IF EXISTS sp_registrar_usuario;
 DROP PROCEDURE IF EXISTS sp_usuario_por_correo;
 DROP PROCEDURE IF EXISTS sp_usuario_por_id;
+DROP PROCEDURE IF EXISTS sp_actualizar_perfil;
 DROP PROCEDURE IF EXISTS sp_listar_usuarios;
 DROP PROCEDURE IF EXISTS sp_cambiar_rol_usuario;
 DROP PROCEDURE IF EXISTS sp_eliminar_usuario;
@@ -175,8 +176,23 @@ BEGIN
   IF NOT EXISTS (SELECT 1 FROM tbl_usuario WHERE id = p_usuario_id) THEN
     SIGNAL SQLSTATE '45404' SET MESSAGE_TEXT = 'Usuario no encontrado';
   END IF;
-  SELECT id, nombre_completo, correo, telefono, rol, fecha_registro
-    FROM tbl_usuario WHERE id = p_usuario_id;
+  -- Además de los datos, devuelve sus totales (para la pantalla "Mi perfil")
+  SELECT u.id, u.nombre_completo, u.correo, u.telefono, u.rol, u.fecha_registro,
+         (SELECT COUNT(*) FROM tbl_atractivo_favorito f WHERE f.usuario_id = u.id) AS favoritos,
+         (SELECT COUNT(*) FROM tbl_itinerario i WHERE i.usuario_id = u.id)         AS viajes,
+         (SELECT COUNT(*) FROM tbl_resena r JOIN tbl_itinerario ir ON ir.id = r.itinerario_id WHERE ir.usuario_id = u.id) AS resenas
+    FROM tbl_usuario u WHERE u.id = p_usuario_id;
+END$$
+
+-- El usuario edita su nombre y su teléfono (el correo y el rol no se cambian aquí)
+CREATE PROCEDURE sp_actualizar_perfil(
+  IN p_usuario_id INT, IN p_nombre VARCHAR(150), IN p_telefono VARCHAR(20))
+BEGIN
+  IF NOT EXISTS (SELECT 1 FROM tbl_usuario WHERE id = p_usuario_id) THEN
+    SIGNAL SQLSTATE '45404' SET MESSAGE_TEXT = 'Usuario no encontrado';
+  END IF;
+  UPDATE tbl_usuario SET nombre_completo = p_nombre, telefono = p_telefono WHERE id = p_usuario_id;
+  CALL sp_usuario_por_id(p_usuario_id);
 END$$
 
 -- ADMIN: lista paginada de usuarios. Devuelve 2 resultados: filas y total.
