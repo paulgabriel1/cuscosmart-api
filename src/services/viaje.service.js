@@ -21,8 +21,14 @@ export const listarItinerarios = async (usuarioId) => (await llamar('sp_listar_i
 const armar = ([[itinerario], paradas]) => ({
   ...itinerario,
   sugerido_ia: Boolean(itinerario.sugerido_ia),
-  paradas: paradas.map((p) => ({ ...p, visitado: Boolean(p.visitado), resenado: Boolean(p.resenado) })),
+  paradas: paradas.map((p) => ({
+    ...p, visitado: Boolean(p.visitado), resenado: Boolean(p.resenado), es_favorito: Boolean(p.es_favorito),
+  })),
 });
+
+// "Mi recorrido" del perfil: todas las paradas de todos los viajes (checklist / línea de tiempo)
+export const miRecorrido = async (usuarioId) =>
+  (await llamar('sp_mi_recorrido', [usuarioId]))[0].map((p) => ({ ...p, visitado: Boolean(p.visitado) }));
 
 export const verItinerario = async (usuarioId, id) => armar(await llamar('sp_ver_itinerario', [usuarioId, id]));
 
@@ -39,8 +45,13 @@ export const actualizarItinerario = async (usuarioId, id, { nombre, latitud_inic
 export const eliminarItinerario = (usuarioId, id) => llamar('sp_eliminar_itinerario', [usuarioId, id]);
 
 // ---------- Paradas y "IA" ----------
-export const agregarParada = async (usuarioId, id, { favorito_id, tiempo_estimado_horas }) =>
-  armar(await llamar('sp_agregar_parada', [usuarioId, id, favorito_id, tiempo_estimado_horas ?? null]));
+export const agregarParada = async (usuarioId, id, { favorito_id, atractivo_id, tiempo_estimado_horas }) =>
+  armar(await (favorito_id
+    ? llamar('sp_agregar_parada', [usuarioId, id, favorito_id, tiempo_estimado_horas ?? null])
+    : llamar('sp_agregar_parada_lugar', [usuarioId, id, atractivo_id, tiempo_estimado_horas ?? null])));
+
+export const desmarcarVisitado = async (usuarioId, id, paradaId) =>
+  armar(await llamar('sp_desmarcar_visitado', [usuarioId, id, paradaId]));
 
 export const quitarParada = async (usuarioId, id, paradaId) =>
   armar(await llamar('sp_quitar_parada', [usuarioId, id, paradaId]));
@@ -53,3 +64,5 @@ export const marcarVisitado = async (usuarioId, id, paradaId) =>
 // ---------- Reseñas ----------
 export const registrarResena = (usuarioId, id, { atractivo_id, puntuacion, comentario }) =>
   llamarUno('sp_registrar_resena', [usuarioId, id, atractivo_id, puntuacion, comentario]);
+
+export const eliminarMiResena = (usuarioId, resenaId) => llamar('sp_eliminar_mi_resena', [usuarioId, resenaId]);

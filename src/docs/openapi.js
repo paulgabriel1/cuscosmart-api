@@ -126,13 +126,16 @@ const paths = {
   },
   '/favoritos/{id}': {
     parameters: [pid('id', 'favorito_id')],
-    delete: { tags: ['Favoritos'], summary: 'Quitar favorito', description: `${TOKEN} También lo quita de tus itinerarios.`, responses: { ...borrado, ...resp(401, 404) } },
+    delete: { tags: ['Favoritos'], summary: 'Quitar favorito', description: `${TOKEN} Tus viajes no cambian: si el lugar es parada de un viaje, solo deja de aparecer en Favoritos.`, responses: { ...borrado, ...resp(401, 404) } },
   },
 
   // ---------- Itinerarios ----------
   '/itinerarios': {
     get: { tags: ['Itinerarios'], summary: 'Mis itinerarios', description: TOKEN, responses: { ...ok('Lista con paradas y visitadas'), ...resp(401) } },
     post: { tags: ['Itinerarios'], summary: 'Crear itinerario', description: `${TOKEN} El punto de inicio (ej. el hotel) es opcional, pero se necesita para ordenar con IA.`, requestBody: cuerpo('Itinerario', { nombre: 'Mi primer día', latitud_inicio: -13.5175, longitud_inicio: -71.98 }), responses: { ...ok('Creado', 201), ...resp(400, 401) } },
+  },
+  '/itinerarios/recorrido': {
+    get: { tags: ['Itinerarios'], summary: 'Mi recorrido (checklist del perfil)', description: `${TOKEN} Todas las paradas de todos tus viajes: primero las visitadas (con fecha_visita, de la más reciente a la más antigua) y luego las pendientes.`, responses: { ...ok('Lista de paradas'), ...resp(401) } },
   },
   '/itinerarios/{id}': {
     parameters: [pid()],
@@ -143,17 +146,18 @@ const paths = {
   '/itinerarios/{id}/paradas': {
     parameters: [pid()],
     post: {
-      tags: ['Itinerarios'], summary: 'Agregar parada desde un favorito', description: `${TOKEN} Va al final; el costo se copia del precio de entrada. 422 si el favorito no es tuyo; 409 si ya está.`,
-      requestBody: cuerpo('ParadaInput', { favorito_id: 1, tiempo_estimado_horas: 1.5 }), responses: { ...ok('Itinerario actualizado', 201), ...resp(400, 401, 404, 409, 422) },
+      tags: ['Itinerarios'], summary: 'Agregar parada (desde un favorito o cualquier lugar)', description: `${TOKEN} Envía favorito_id **o** atractivo_id. Con atractivo_id el lugar NO se guarda en tus favoritos. Va al final; el costo se copia del precio de entrada. 404 si el favorito no es tuyo; 409 si ya está.`,
+      requestBody: cuerpo('ParadaInput', { atractivo_id: 5, tiempo_estimado_horas: 1.5 }), responses: { ...ok('Itinerario actualizado', 201), ...resp(400, 401, 404, 409, 422) },
     },
   },
   '/itinerarios/{id}/paradas/{paradaId}': {
     parameters: [pid(), pid('paradaId')],
-    delete: { tags: ['Itinerarios'], summary: 'Quitar parada', description: `${TOKEN} El orden se compacta (1,2,4 → 1,2,3).`, responses: { ...ok('Itinerario actualizado'), ...resp(401, 404) } },
+    delete: { tags: ['Itinerarios'], summary: 'Quitar parada', description: `${TOKEN} El orden se compacta (1,2,4 → 1,2,3). Si tenías reseña de ese lugar en este viaje, también se borra.`, responses: { ...ok('Itinerario actualizado'), ...resp(401, 404) } },
   },
   '/itinerarios/{id}/paradas/{paradaId}/visitado': {
     parameters: [pid(), pid('paradaId')],
-    patch: { tags: ['Itinerarios'], summary: 'Marcar parada como visitada', description: `${TOKEN} Necesario antes de reseñar.`, responses: { ...ok('Itinerario actualizado'), ...resp(401, 404) } },
+    patch: { tags: ['Itinerarios'], summary: 'Marcar parada como visitada', description: `${TOKEN} Necesario antes de reseñar. Guarda fecha_visita.`, responses: { ...ok('Itinerario actualizado'), ...resp(401, 404) } },
+    delete: { tags: ['Itinerarios'], summary: 'Desmarcar visita', description: `${TOKEN} 422 si ya reseñaste ese lugar (borra antes la reseña).`, responses: { ...ok('Itinerario actualizado'), ...resp(401, 404, 422) } },
   },
   '/itinerarios/{id}/ordenar-ia': {
     parameters: [pid()],
@@ -191,6 +195,10 @@ const paths = {
   '/resenas/{id}': {
     parameters: [pid()],
     delete: { tags: ['Reseñas'], summary: 'Moderar (borrar) una reseña', description: `${ADMIN} El trigger recalcula la calificación.`, responses: { ...borrado, ...resp(401, 403, 404) } },
+  },
+  '/resenas/{id}/propia': {
+    parameters: [pid()],
+    delete: { tags: ['Reseñas'], summary: 'Borrar mi reseña', description: `${TOKEN} 404 si la reseña no es tuya. El trigger recalcula la calificación.`, responses: { ...borrado, ...resp(401, 404) } },
   },
   '/usuarios': {
     get: { tags: ['Usuarios'], summary: 'Listar usuarios', description: ADMIN, parameters: [q('buscar', 'Nombre o correo'), ...pag], responses: { ...lista('Página de usuarios'), ...resp(401, 403) } },
@@ -230,7 +238,7 @@ const schemas = {
   Foto: obj({ url_foto: txt({ maxLength: 500 }), descripcion: txt({ maxLength: 255, nullable: true }) }, ['url_foto']),
   FavoritoInput: obj({ atractivo_id: ent() }, ['atractivo_id']),
   Itinerario: obj({ nombre: txt({ minLength: 3, maxLength: 200 }), latitud_inicio: num({ nullable: true }), longitud_inicio: num({ nullable: true }) }, ['nombre']),
-  ParadaInput: obj({ favorito_id: ent(), tiempo_estimado_horas: num({ exclusiveMinimum: 0, maximum: 24, default: 1 }) }, ['favorito_id']),
+  ParadaInput: obj({ favorito_id: ent({ description: 'Usa este o atractivo_id' }), atractivo_id: ent({ description: 'Cualquier lugar; no se guarda en favoritos' }), tiempo_estimado_horas: num({ exclusiveMinimum: 0, maximum: 24, default: 1 }) }),
   ResenaInput: obj({ atractivo_id: ent(), puntuacion: { type: 'integer', minimum: 1, maximum: 5 }, comentario: txt({ maxLength: 500, nullable: true }) }, ['atractivo_id', 'puntuacion']),
   Pregunta: obj({ pregunta: txt({ minLength: 3, maxLength: 255 }) }, ['pregunta']),
   PreguntaFrecuente: obj({ pregunta: txt({ minLength: 5, maxLength: 255 }), respuesta: txt({ minLength: 3 }), palabras_clave: txt({ maxLength: 255, nullable: true }), atractivo_id: ent({ nullable: true }) }, ['pregunta', 'respuesta']),

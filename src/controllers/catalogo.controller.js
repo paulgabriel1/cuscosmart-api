@@ -27,8 +27,8 @@ export async function eliminarZona(req, res) {
 // ---------- Atractivos ----------
 export async function listarAtractivos(req, res) {
   const q = req.validado.query;
-  const { filas, total } = await s.listarAtractivos(q);
-  res.json({ ok: true, data: filas, meta: meta(q.page, q.limit, total) });
+  const { filas, total, sugerencias } = await s.listarAtractivos(q);
+  res.json({ ok: true, data: filas, meta: { ...meta(q.page, q.limit, total), ...(q.buscar && { sugerencias }) } });
 }
 export const cercanos = async (req, res) => ok(res, await s.cercanos(req.validado.query));
 export const verAtractivo = async (req, res) => ok(res, await s.verAtractivo(param(req).id));

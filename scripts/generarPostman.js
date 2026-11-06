@@ -116,6 +116,11 @@ const catalogo = carpeta('01 Catálogo', 'Categorías, zonas y atractivos: leer 
     status: 200, tests: [t('Todos son miradores', `${D}.forEach((a) => pm.expect(a.categoria_id).to.eql(4))`)],
   }),
   req('GET /atractivos?buscar=sal', 'GET', '/atractivos?buscar=sal', { status: 200, tests: [eq('Encuentra las Salineras', `${D}[0].nombre`, 'Salineras de Maras')] }),
+  req('GET /atractivos?buscar=plaza armas (por palabras)', 'GET', '/atractivos?buscar=plaza%20armas', { status: 200, tests: [eq('Encuentra la Plaza de Armas', `${D}[0].nombre`, 'Plaza de Armas')] }),
+  req('GET /atractivos?buscar=sacsayhuaman (sin tilde)', 'GET', '/atractivos?buscar=sacsayhuaman', { status: 200, tests: [eq('Encuentra Sacsayhuamán', `${D}[0].nombre`, 'Sacsayhuamán')] }),
+  req('GET /atractivos?buscar=sieterrrrr (sugiere)', 'GET', '/atractivos?buscar=sieterrrrr', {
+    status: 200, tests: [eq('Sin resultados', `${M}.total`, 0), t('Sugiere las calles Siete…', `pm.expect(${M}.sugerencias.map((s) => s.nombre).join()).to.include('Siete')`)],
+  }),
   req('GET /atractivos?page=1e308 (no rompe la API)', 'GET', '/atractivos?page=1e308', { status: 400, tests: [code('VALIDATION_ERROR')] }),
   req('GET /atractivos con filtros inválidos', 'GET', '/atractivos?limit=500&categoria_id=abc', { status: 400, tests: [code('VALIDATION_ERROR')] }),
   req('GET /atractivos/cercanos (Plaza, 0.5 km)', 'GET', '/atractivos/cercanos?lat=-13.5167&lng=-71.9788&radio_km=0.5', {
@@ -225,7 +230,7 @@ const itinerarios = carpeta('03 Itinerarios e IA', 'Paradas desde favoritos, ord
   req('Reseña con puntuación 6', 'POST', '/itinerarios/{{idIti}}/resenas', { auth: 'ana', status: 400, body: { atractivo_id: 5, puntuacion: 6 }, tests: [code('VALIDATION_ERROR')] }),
   req('Reseñar la Plaza', 'POST', '/itinerarios/{{idIti}}/resenas', {
     auth: 'ana', status: 201, body: { atractivo_id: 5, puntuacion: 4, comentario: 'Había música en la pileta' },
-    tests: [eq('Calificación nueva 4', `${D}.nueva_calificacion`, 4)],
+    tests: [eq('Calificación nueva 4', `${D}.nueva_calificacion`, 4), guardar('resenaPlaza', `${D}.id`)],
   }),
   req('Reseña repetida', 'POST', '/itinerarios/{{idIti}}/resenas', { auth: 'ana', status: 409, body: { atractivo_id: 5, puntuacion: 5 }, tests: [code('DUPLICATE')] }),
   req('GET reseñas públicas de la Plaza', 'GET', '/atractivos/5/resenas', {
@@ -246,10 +251,39 @@ const itinerarios = carpeta('03 Itinerarios e IA', 'Paradas desde favoritos, ord
     auth: 'ana', status: 409, body: { atractivo_id: 3, puntuacion: 5 },
     tests: [code('DUPLICATE'), t('Una reseña por turista', `pm.expect(pm.response.json().error.message).to.eql('Ya reseñaste este atractivo')`)],
   }),
-  req('Quitar el favorito Plaza (cae su parada en cascada)', 'DELETE', '/favoritos/{{favPlaza}}', { auth: 'ana', status: 204 }),
-  req('El orden se compacta tras la cascada', 'GET', '/itinerarios/{{idIti}}', {
-    auth: 'ana', status: 200, tests: [eq('Queda 1 parada', `${D}.paradas.length`, 1), eq('Catedral pasa al orden 1', `${D}.paradas[0].orden`, 1), eq('Es la Catedral', `${D}.paradas[0].atractivo`, 'Catedral del Cusco')],
+  req('Quitar el favorito Plaza (el viaje no cambia)', 'DELETE', '/favoritos/{{favPlaza}}', { auth: 'ana', status: 204 }),
+  req('La Plaza ya no está en favoritos', 'GET', '/favoritos', {
+    auth: 'ana', status: 200, tests: [t('Sin la Plaza', `pm.expect(${D}.map((f) => f.atractivo_id)).to.not.include(5)`)],
   }),
+  req('Pero sigue como parada del viaje', 'GET', '/itinerarios/{{idIti}}', {
+    auth: 'ana', status: 200,
+    tests: [eq('Siguen 2 paradas', `${D}.paradas.length`, 2), eq('La Plaza sigue primera', `${D}.paradas[0].atractivo`, 'Plaza de Armas'),
+      t('Distancia del inicio en todas (aunque no esté ordenado)', `pm.expect(${D}.paradas.every((p) => p.distancia_km != null)).to.eql(true)`)],
+  }),
+  req('Agregar Pisac sin guardarlo en favoritos (atractivo_id)', 'POST', '/itinerarios/{{idIti}}/paradas', {
+    auth: 'ana', status: 201, body: { atractivo_id: 4 },
+    tests: [eq('3 paradas', `${D}.paradas.length`, 3), eq('Pisac al final', `${D}.paradas[2].atractivo`, 'Pisac'), eq('No es favorito', `${D}.paradas[2].es_favorito`, false),
+      guardar('paradaPisac', `${D}.paradas[2].parada_id`)],
+  }),
+  req('Pisac NO aparece en favoritos', 'GET', '/favoritos', {
+    auth: 'ana', status: 200, tests: [t('Sin Pisac', `pm.expect(${D}.map((f) => f.atractivo_id)).to.not.include(4)`)],
+  }),
+  req('Agregar Pisac repetido', 'POST', '/itinerarios/{{idIti}}/paradas', { auth: 'ana', status: 409, body: { atractivo_id: 4 }, tests: [code('DUPLICATE')] }),
+  req('Parada con favorito_id y atractivo_id a la vez', 'POST', '/itinerarios/{{idIti}}/paradas', { auth: 'ana', status: 400, body: { favorito_id: 3, atractivo_id: 4 }, tests: [code('VALIDATION_ERROR')] }),
+  req('Parada de atractivo inexistente', 'POST', '/itinerarios/{{idIti}}/paradas', { auth: 'ana', status: 404, body: { atractivo_id: 999 }, tests: [code('NOT_FOUND')] }),
+  req('Mi recorrido (checklist del perfil)', 'GET', '/itinerarios/recorrido', {
+    auth: 'ana', status: 200,
+    tests: [t('Primero lo visitado', `const v = ${D}.map((p) => p.visitado); pm.expect(v).to.eql([...v].sort((x, y) => y - x))`),
+      t('Visitadas con fecha', `pm.expect(${D}.filter((p) => p.visitado).every((p) => p.fecha_visita)).to.eql(true)`)],
+  }),
+  req('Desmarcar la Plaza ya reseñada', 'DELETE', '/itinerarios/{{idIti}}/paradas/{{paradaPlaza}}/visitado', { auth: 'ana', status: 422, tests: [code('BUSINESS_RULE')] }),
+  req('Borrar reseña ajena como turista', 'DELETE', '/resenas/{{resenaPlaza}}/propia', { auth: 'nuevo', status: 404, tests: [code('NOT_FOUND')] }),
+  req('Ana borra su reseña de la Plaza', 'DELETE', '/resenas/{{resenaPlaza}}/propia', { auth: 'ana', status: 204 }),
+  req('La reseña ya no aparece', 'GET', '/atractivos/5/resenas', { status: 200, tests: [eq('0 reseñas', `${M}.total`, 0)] }),
+  req('Ahora sí se puede desmarcar la Plaza', 'DELETE', '/itinerarios/{{idIti}}/paradas/{{paradaPlaza}}/visitado', {
+    auth: 'ana', status: 200, tests: [eq('No visitada', `${D}.paradas[0].visitado`, false)],
+  }),
+  req('Quitar Pisac', 'DELETE', '/itinerarios/{{idIti}}/paradas/{{paradaPisac}}', { auth: 'ana', status: 200, tests: [eq('Quedan 2', `${D}.paradas.length`, 2)] }),
   req('DELETE /itinerarios/{{idIti}}', 'DELETE', '/itinerarios/{{idIti}}', { auth: 'ana', status: 204 }),
   req('La calificación de la Plaza se recalcula', 'GET', '/atractivos/5', { status: 200, tests: [eq('Vuelve a 0', `${D}.calificacion`, 0)] }),
 ]);

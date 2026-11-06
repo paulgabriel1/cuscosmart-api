@@ -16,10 +16,17 @@ export const itinerarioSchema = z
     path: ['longitud_inicio'],
   });
 
-export const paradaSchema = z.object({
-  favorito_id: id,
-  tiempo_estimado_horas: z.coerce.number().gt(0, 'Debe ser mayor que 0').max(24).optional(),
-});
+// La parada se agrega desde un favorito (favorito_id) o desde cualquier lugar (atractivo_id, no lo guarda en favoritos)
+export const paradaSchema = z
+  .object({
+    favorito_id: id.optional(),
+    atractivo_id: id.optional(),
+    tiempo_estimado_horas: z.coerce.number().gt(0, 'Debe ser mayor que 0').max(24).optional(),
+  })
+  .refine((p) => (p.favorito_id == null) !== (p.atractivo_id == null), {
+    message: 'Envía favorito_id o atractivo_id (solo uno)',
+    path: ['atractivo_id'],
+  });
 
 export const resenaSchema = z.object({
   atractivo_id: id,
