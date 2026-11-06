@@ -27,6 +27,7 @@ Esta es la guía paso a paso para construir **CuscoSmart IA desde cero**. Sigue 
 | [6](fase-06.md) | Favoritos e itinerarios | Rutas ordenadas por la "IA" (Haversine) |
 | [7](fase-07.md) | Reseñas y asistente | Reseñas verificadas y preguntas frecuentes |
 | [8](fase-08.md) | Postman completo y Swagger | Colección con pruebas automáticas y documentación |
+| [9](fase-09.md) | Front React con mapa (repo `cuscosmart-web`) | Web completa probada de punta a punta (23 pasos) |
 | 9 | Front con React y mapa | Web con mapa, rutas y panel de administración |
 
 ## Idea general del proyecto
