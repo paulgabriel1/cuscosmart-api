@@ -20,13 +20,13 @@ Esta es la guía paso a paso para construir **CuscoSmart IA desde cero**. Sigue 
 | --- | --- | --- |
 | [0](fase-00.md) | Preparar la PC, la carpeta y el repositorio | Repo privado en GitHub con el primer commit |
 | [1](fase-01.md) | Base de datos: tablas, función, triggers y procedimientos | `cuscosmart_db` creada y probada con `CALL` |
-| 2 | Proyecto base de Node | `GET /api/v1/health` responde |
-| 3 | Manejo de errores y validación | Errores con formato único, 400 y 404 controlados |
-| 4 | Autenticación y roles | Registro, login con JWT, rutas solo para ADMIN |
-| 5 | Catálogo: categorías, zonas y atractivos | CRUD completo, filtros y lugares cercanos |
-| 6 | Favoritos e itinerarios | Rutas ordenadas por la "IA" (Haversine) |
-| 7 | Reseñas y asistente | Reseñas verificadas y preguntas frecuentes |
-| 8 | Postman completo y Swagger | Colección con pruebas automáticas y documentación |
+| [2](fase-02.md) | Proyecto base de Node | `GET /api/v1/health` responde |
+| [3](fase-03.md) | Manejo de errores y validación | Errores con formato único, 400 y 404 controlados |
+| [4](fase-04.md) | Autenticación y roles | Registro, login con JWT, rutas solo para ADMIN |
+| [5](fase-05.md) | Catálogo: categorías, zonas y atractivos | CRUD completo, filtros y lugares cercanos |
+| [6](fase-06.md) | Favoritos e itinerarios | Rutas ordenadas por la "IA" (Haversine) |
+| [7](fase-07.md) | Reseñas y asistente | Reseñas verificadas y preguntas frecuentes |
+| [8](fase-08.md) | Postman completo y Swagger | Colección con pruebas automáticas y documentación |
 | 9 | Front con React y mapa | Web con mapa, rutas y panel de administración |
 
 ## Idea general del proyecto
