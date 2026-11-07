@@ -1,9 +1,9 @@
 # Guía de construcción de CuscoSmart IA
 
-Esta es la guía paso a paso para construir **CuscoSmart IA desde cero**. Sigue las mismas 9 fases que la guía del profesor, *API REST del SGRH*.
+Esta es la guía paso a paso para construir **CuscoSmart IA desde cero**. Sigue el mismo estilo de la guía del profesor, *API REST del SGRH*.
 
 > Curso Fullstack Developer Software, SENATI.
-> Integrantes: Gabriel Paul Alata Condori · Rodrigo Ccahuana Mayo · Mademil Lucero Alata Condori.
+> Integrantes: Gabriel Paul Alata Condori · Rodrigo Ccahuana Mayo · Elizabeth Flores Vargas.
 
 ## Cómo usar esta guía
 
@@ -28,8 +28,10 @@ Esta es la guía paso a paso para construir **CuscoSmart IA desde cero**. Sigue 
 | [7](fase-07.md) | Reseñas y asistente | Reseñas verificadas y preguntas frecuentes |
 | [8](fase-08.md) | Postman completo y Swagger | Colección con pruebas automáticas y documentación |
 | [9](fase-09.md) | Front React con mapa (repo `cuscosmart-web`) | Web completa probada de punta a punta (23 pasos) |
-| [10](fase-10.md) | Login con Google, más lugares y front moderno | Galería con zoom, mapa "cerca de mí", chat flotante, 6 idiomas y modo oscuro |
-| 9 | Front con React y mapa | Web con mapa, rutas y panel de administración |
+| [10](fase-10.md) | Login con Google, más lugares y front moderno | Galería con zoom, mapa "cerca de mí", chat flotante y modo oscuro |
+| [11](fase-11.md) | Mi recorrido, paradas sin favoritos y búsqueda tolerante | "¿Quisiste decir?" y reseñas propias |
+| [12](fase-12.md) | Visitar desde favoritos y mapa, armar viaje | Columnas `es_favorito` y `fecha_visita`; web en español e inglés |
+| [13](fase-13.md) | Fotos desde la PC o un link, foto de perfil y prueba en el celular | Subidas en `uploads/`, carrusel de portada y mapa con estilos |
 
 ## Idea general del proyecto
 

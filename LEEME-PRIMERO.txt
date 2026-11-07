@@ -1,174 +1,65 @@
 =====================================================================
-  CUSCOSMART IA  -  COMO PASAR EL PROYECTO A OTRA PC (SENATI o tu casa)
-  Integrantes: Gabriel Paul Alata Condori · Rodrigo Ccahuana Mayo ·
-               Elizabeth Flores Vargas
+  CUSCOSMART IA - LEEME PRIMERO
+  Gabriel Paul Alata Condori · Rodrigo Ccahuana Mayo · Elizabeth Flores Vargas
 =====================================================================
 
-DONDE ESTA EN GITHUB
---------------------
-  Este archivo:  https://github.com/paulgabriel1/cuscosmart-api/blob/main/LEEME-PRIMERO.txt
-  API:           https://github.com/paulgabriel1/cuscosmart-api
-  Web:           https://github.com/paulgabriel1/cuscosmart-web
-  (Son privados: acepta la invitacion de GitHub que te llego al correo.)
+GITHUB (privados: acepta la invitacion que te llego al correo)
+  API: https://github.com/paulgabriel1/cuscosmart-api
+  Web: https://github.com/paulgabriel1/cuscosmart-web
+  Guia completa paso a paso: cuscosmart-api\docs\INSTALACION.md
 
-  YA TENGO EL PROYECTO: ACTUALIZAR A LA ULTIMA VERSION
-    XAMPP -> Start MySQL. Luego, en PowerShell:
-      Ventana 1 (API):
-        cd $HOME\Desktop\cuscosmart-api
-        git pull
-        npm install
-        npm run db:migrar      <- actualiza la base SIN borrar tus datos
-        npm run dev
-      Ventana 2 (web):
-        cd $HOME\Desktop\cuscosmart-web
-        git pull
-        npm install
-        npm run dev
-    Abrir http://localhost:5173
+NECESITAS: XAMPP, Node.js (LTS), Git e internet.
 
-  NO TENGO EL PROYECTO: descargarlo
-      cd $HOME\Desktop
-      git clone https://github.com/paulgabriel1/cuscosmart-api.git
-      git clone https://github.com/paulgabriel1/cuscosmart-web.git
-    y sigue desde el PASO 2 de abajo.
+---------------------------------------------------------------------
+PRIMERA VEZ EN UNA PC
+---------------------------------------------------------------------
+1. Descargar (o copiar las 2 carpetas del USB al Escritorio):
+     cd $HOME\Desktop
+     git clone https://github.com/paulgabriel1/cuscosmart-api.git
+     git clone https://github.com/paulgabriel1/cuscosmart-web.git
 
+2. XAMPP -> Start en MySQL (se pone verde).
 
-QUE HAY EN ESTE DISCO
----------------------
-  CuscoSmart-IA\
-    LEEME-PRIMERO.txt   <- este archivo
-    cuscosmart-api\     <- la API (Node + MySQL). Guia completa:
-                           cuscosmart-api\docs\INSTALACION.md
-    cuscosmart-web\     <- la pagina web (React)
-
-  NO incluye:
-    - node_modules  (librerias: se descargan con "npm install", necesita internet)
-    - .env          (claves: se crea en el paso 4, por seguridad no se copia)
-
-
-ANTES DE EMPEZAR: LA PC NECESITA
---------------------------------
-  [ ] XAMPP    https://www.apachefriends.org/es/
-  [ ] Node.js  https://nodejs.org/es   (version LTS)
-  [ ] Git      https://git-scm.com/download/win   (opcional si solo copias)
-  [ ] Internet (para "npm install" y para que se vea el mapa)
-
-  Si no sabes si estan instalados: abre PowerShell y escribe
-      node -v      (debe salir v20 o mas)
-      npm -v
-
-
-PASO 1. COPIAR EL PROYECTO A LA PC
-----------------------------------
-  1. Conecta el SSD "EXTERNO PAC".
-  2. Abre la carpeta CuscoSmart-IA del SSD.
-  3. Selecciona las carpetas  cuscosmart-api  y  cuscosmart-web
-     -> Ctrl + C
-  4. Ve al ESCRITORIO de la PC -> Ctrl + V
-  5. Espera a que termine de copiar. Ya puedes desconectar el SSD.
-
-  (Trabaja siempre desde el Escritorio, NO directo desde el SSD:
-   es mas rapido y no se corrompe si se desconecta. Ademas, si usas
-   "git" dentro del SSD sale "dubious ownership"; en el Escritorio no.)
-
-
-PASO 2. PRENDER MYSQL
----------------------
-  Abre "XAMPP Control Panel" -> en la fila MySQL clic en START
-  -> debe ponerse VERDE. No cierres XAMPP.
-
-
-PASO 3. ABRIR POWERSHELL
-------------------------
-  Tecla Windows -> escribe  powershell  -> Enter.
-  Pega los comandos de abajo UNO POR UNO y presiona Enter.
-  Espera a que termine cada uno antes de pegar el siguiente.
-
-  Si sale "npm.ps1 no se puede cargar ... ejecucion de scripts":
-      Set-ExecutionPolicy -Scope CurrentUser RemoteSigned
-  (escribe S y Enter) y vuelve a intentar.
-
-
-PASO 4. PREPARAR Y PRENDER LA API   (ventana 1)
------------------------------------
-  cd $HOME\Desktop\cuscosmart-api
-  npm install
-  Copy-Item .env.example .env
-  node -e "console.log(require('crypto').randomBytes(48).toString('hex'))"
-
-  -> Copia el texto largo que salio.
-  notepad .env
-  -> En la linea  JWT_SECRET=  borra lo que hay despues del "=" y pega
-     tu texto. Guarda (Ctrl + S) y cierra el Bloc de notas.
-
-  npm run db:reset
-  -> Debe terminar con:  atractivos 27 ... Base cuscosmart_db recreada.
-
-  npm run dev
-  -> Debe decir:  Conectado a MySQL  /  API en http://localhost:3000/api/v1
-  -> NO CIERRES ESTA VENTANA.
-
-
-PASO 5. PREPARAR Y PRENDER LA WEB   (ventana 2: abre OTRO PowerShell)
----------------------------------
-  cd $HOME\Desktop\cuscosmart-web
-  npm install
-  npm run dev
-  -> Debe decir:  Local: http://localhost:5173/
-  -> NO CIERRES ESTA VENTANA.
-
-
-PASO 6. ABRIR LA PAGINA
------------------------
-  En Chrome o Edge:   http://localhost:5173
-
-  Usuarios de prueba (escribe el correo y la contrasena en "Ingresar"):
-     Administrador:  admin@cuscosmart.pe   /  Admin12345
-     Turista:        ana@mail.com          /  Turista123
-
-  Documentacion de la API (para el profe):  http://localhost:3000/api/v1/docs
-
-
-LAS SIGUIENTES VECES EN LA MISMA PC
------------------------------------
-  1. XAMPP -> Start MySQL
-  2. Ventana 1:  cd $HOME\Desktop\cuscosmart-api   y luego   npm run dev
-  3. Ventana 2:  cd $HOME\Desktop\cuscosmart-web   y luego   npm run dev
-  4. Abrir http://localhost:5173
-  (Ya no hace falta npm install ni .env ni db:reset.)
-
-
-TRAER LA ULTIMA VERSION DE GITHUB (si tienes acceso al repo)
-------------------------------------------------------------
-  Las carpetas ya vienen conectadas a GitHub. En cada una:
-     git pull
+3. Ventana 1 de PowerShell (API):
+     cd $HOME\Desktop\cuscosmart-api
      npm install
-  Si cambio la base de datos:  npm run db:migrar  (en la API, NO borra tus datos)
-                               npm run db:reset   (borra todo y deja los datos de ejemplo)
+     Copy-Item .env.example .env
+     node -e "console.log(require('crypto').randomBytes(48).toString('hex'))"
+     notepad .env        <- pega el texto largo en JWT_SECRET= y guarda
+     npm run db:reset    <- debe decir "atractivos 27"
+     npm run dev         <- NO cierres esta ventana
 
+4. Ventana 2 de PowerShell (web):
+     cd $HOME\Desktop\cuscosmart-web
+     npm install
+     npm run dev         <- NO cierres esta ventana
 
-ACTUALIZAR ESTE SSD CON TUS CAMBIOS (para pasarselo a otro)
-------------------------------------------------------------
-  Copia de nuevo las carpetas del Escritorio al SSD y reemplaza.
-  Puedes BORRAR antes las carpetas node_modules de cada proyecto
-  (pesan mucho y se vuelven a crear con npm install).
-  NO compartas tu archivo .env.
+5. Abrir http://localhost:5173
 
+---------------------------------------------------------------------
+LAS SIGUIENTES VECES (traer lo ultimo de GitHub)
+---------------------------------------------------------------------
+  XAMPP -> Start MySQL
+  Ventana 1: cd $HOME\Desktop\cuscosmart-api  -> git pull -> npm install -> npm run dev
+  Ventana 2: cd $HOME\Desktop\cuscosmart-web  -> git pull -> npm install -> npm run dev
+  Si cambio la base: npm run db:migrar (no borra datos) o npm run db:reset (datos limpios)
 
+---------------------------------------------------------------------
+USUARIOS
+---------------------------------------------------------------------
+  Administrador:  admin@cuscosmart.pe  /  Admin12345
+  Turista:        ana@mail.com         /  Turista123
+
+---------------------------------------------------------------------
 SI ALGO FALLA
--------------
+---------------------------------------------------------------------
+  "npm.ps1 no se puede cargar"       -> Set-ExecutionPolicy -Scope CurrentUser RemoteSigned
   "No se pudo conectar con la API"   -> la ventana 1 esta cerrada o con error
-  "ECONNREFUSED" / no conecta MySQL  -> XAMPP: Start en MySQL
-  MySQL no arranca (puerto 3306)     -> Administrador de tareas: finalizar
-                                        mysqld.exe y Start otra vez
-  "Faltan variables en .env"          -> no hiciste el paso 4 (.env)
-  "Cannot find package ..."           -> falta  npm install
-  "EADDRINUSE 3000" o "port 5173"     -> ya esta abierto en otra ventana
-  Solo hay 14 lugares / faltan fotos  -> npm run db:reset y reinicia la API
-  "Demasiados intentos"               -> espera 15 min o reinicia la API
-  Boton de Google en gris             -> normal, es opcional (ver guia)
-  Mapa gris                           -> falta internet
+  ECONNREFUSED / no conecta MySQL    -> XAMPP: Start en MySQL
+  "Cannot find package ..."          -> falta npm install
+  "Faltan variables en .env"         -> repite el paso 3 (.env)
+  Solo 14 lugares / faltan fotos     -> npm run db:reset y reinicia la API
+  Mas soluciones: docs\INSTALACION.md (seccion 7)
 
-  Guia completa con mas detalles:
-     cuscosmart-api\docs\INSTALACION.md  (abrela con VS Code o en GitHub)
+  NO compartas tu archivo .env (tiene tus claves).
 =====================================================================

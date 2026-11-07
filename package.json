@@ -24,7 +24,7 @@
     "turismo",
     "cusco"
   ],
-  "author": "Gabriel Paul Alata Condori, Rodrigo Ccahuana Mayo, Mademil Lucero Alata Condori",
+  "author": "Gabriel Paul Alata Condori, Rodrigo Ccahuana Mayo, Elizabeth Flores Vargas",
   "license": "ISC",
   "dependencies": {
     "bcryptjs": "^3.0.3",

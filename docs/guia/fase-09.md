@@ -28,11 +28,11 @@ pages (pantallas) ──▶ hooks (useCarga / useAccion) ──▶ api.js ──
 
 | Archivo | Qué hace |
 | --- | --- |
-| `src/api.js` | **La única puerta a la API.** Agrega `Authorization: Bearer <token>`. Si la API falla, lanza `{ code, message }`. Si responde 401, cierra la sesión. |
-| `src/auth.jsx` | Contexto de sesión: `login`, `registro`, `logout`, `usuario`, `esAdmin`… Además guarda los **favoritos**, así el ♥ sabe en cualquier pantalla si un lugar ya está guardado. |
-| `src/hooks.js` | `useCarga(fn, deps)` lee datos (con `cargando`, `error` y `recargar`). `useAccion()` envía formularios (con `ocupado` y `error`). |
-| `src/ui/Feedback.jsx` | Notificaciones (`toast.ok` / `toast.error`), ventana de confirmación (`await confirmar({...})`) y `useOperacion()`. |
-| `src/components/Mapa.jsx` | Leaflet con OpenStreetMap: marcadores numerados, punto de inicio ★, línea de la ruta y clic para elegir un punto. |
+| `lib/api.js` | **La única puerta a la API.** Agrega `Authorization: Bearer <token>`. Si la API falla, lanza `{ code, message }`. Si responde 401, cierra la sesión. |
+| `context/auth.jsx` | Contexto de sesión: `login`, `registro`, `logout`, `usuario`, `esAdmin`… Además guarda los **favoritos**, así el ♥ sabe en cualquier pantalla si un lugar ya está guardado. |
+| `lib/hooks.js` | `useCarga(fn, deps)` lee datos (con `cargando`, `error` y `recargar`). `useAccion()` envía formularios (con `ocupado` y `error`). |
+| `ui/Feedback.jsx` | Notificaciones (`toast.ok` / `toast.error`), ventana de confirmación (`await confirmar({...})`) y `useOperacion()`. |
+| `components/Mapa.jsx` | Leaflet con OpenStreetMap: marcadores numerados, punto de inicio ★, línea de la ruta y clic para elegir un punto. |
 
 ## 9.3 Las pantallas y qué endpoint usa cada una
 
@@ -43,7 +43,7 @@ pages (pantallas) ──▶ hooks (useCarga / useAccion) ──▶ api.js ──
 | ♥ (en todas) | `GET · POST /favoritos`, `DELETE /favoritos/:id` |
 | Mis viajes `/viajes` | `GET · POST /itinerarios`, `DELETE /itinerarios/:id` |
 | Viaje `/viajes/:id` | `GET · PUT /itinerarios/:id`, `POST …/paradas`, `DELETE …/paradas/:p`, `PATCH …/visitado`, `POST …/ordenar-ia`, `POST …/resenas` |
-| Asistente `/asistente` | `POST /asistente/preguntar`, `GET /preguntas-frecuentes` |
+| Asistente (chat flotante ¿Dudas?) | `POST /asistente/preguntar`, `GET /preguntas-frecuentes` |
 | Acceso `/acceso` | `POST /auth/login`, `POST /auth/registro` |
 | Admin `/admin` | CRUD de atractivos (más fotos y horarios), categorías, zonas, preguntas y usuarios |
 
@@ -68,7 +68,7 @@ cd $HOME\Desktop\cuscosmart-web; npm run dev
 ```
 
 Recorrido sugerido:
-1. **Turista** (botón de prueba) → ♥ en Catedral, Qorikancha y Sacsayhuamán.
+1. Ingresa con `ana@mail.com` / `Turista123` → ♥ en Catedral, Qorikancha y Sacsayhuamán.
 2. **Mis viajes** → Nuevo viaje → toca el mapa en tu hotel.
 3. Agrega las 3 paradas → **Ordenar con IA**.
 4. **Visitado** → **Reseñar**.
