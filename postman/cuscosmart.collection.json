@@ -12,7 +12,8 @@
         "exec": [
           "if (!pm.collectionVariables.get('correoNuevo')) {",
           "  pm.collectionVariables.set('correoNuevo', 'luis' + Date.now() + '@mail.com');",
-          "}"
+          "}",
+          "pm.collectionVariables.set('tokenFalso', ['token', 'invalido', 'de', 'prueba'].join('.'));"
         ]
       }
     }
@@ -32,6 +33,10 @@
     },
     {
       "key": "tokenNuevo",
+      "value": ""
+    },
+    {
+      "key": "tokenFalso",
       "value": ""
     },
     {
@@ -577,7 +582,7 @@
               "bearer": [
                 {
                   "key": "token",
-                  "value": "token.invalido.123",
+                  "value": "{{tokenFalso}}",
                   "type": "string"
                 }
               ]
