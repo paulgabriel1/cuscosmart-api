@@ -284,6 +284,33 @@ const itinerarios = carpeta('03 Itinerarios e IA', 'Paradas desde favoritos, ord
     auth: 'ana', status: 200, tests: [eq('No visitada', `${D}.paradas[0].visitado`, false)],
   }),
   req('Quitar Pisac', 'DELETE', '/itinerarios/{{idIti}}/paradas/{{paradaPisac}}', { auth: 'ana', status: 200, tests: [eq('Quedan 2', `${D}.paradas.length`, 2)] }),
+  // ---- Marcar visitado sin abrir un viaje (desde Favoritos / Mapa / ficha) y reseñar ----
+  req('Marcar Moray como visitado (sin viaje)', 'POST', '/itinerarios/visitar', {
+    auth: 'ana', status: 200, body: { atractivo_id: 13 },
+    tests: [guardar('itiVisitas', `${D}.itinerario_id`), guardar('paradaMoray', `${D}.parada_id`)],
+  }),
+  req('Se creó "Lugares visitados" con Moray visitado', 'GET', '/itinerarios/{{itiVisitas}}', {
+    auth: 'ana', status: 200, tests: [eq('Nombre', `${D}.nombre`, 'Lugares visitados'), eq('Moray visitado', `${D}.paradas[0].visitado`, true), eq('No es favorito', `${D}.paradas[0].es_favorito`, false)],
+  }),
+  req('Marcar Moray otra vez (misma parada)', 'POST', '/itinerarios/visitar', {
+    auth: 'ana', status: 200, body: { atractivo_id: 13 }, tests: [t('Misma parada', `pm.expect(${D}.parada_id).to.eql(Number(pm.collectionVariables.get('paradaMoray')))`)],
+  }),
+  req('Reseñar Moray tras marcarlo visitado', 'POST', '/itinerarios/{{itiVisitas}}/resenas', {
+    auth: 'ana', status: 201, body: { atractivo_id: 13, puntuacion: 5, comentario: 'Los andenes circulares son increíbles' }, tests: [eq('Calificación 5', `${D}.nueva_calificacion`, 5)],
+  }),
+  req('Marcar visitado un lugar inexistente', 'POST', '/itinerarios/visitar', { auth: 'ana', status: 404, body: { atractivo_id: 999 }, tests: [code('NOT_FOUND')] }),
+  req('Marcar visitado sin token', 'POST', '/itinerarios/visitar', { status: 401, body: { atractivo_id: 13 } }),
+  // ---- "Armar un viaje" con todos mis favoritos ----
+  req('Nuevo viaje para mis favoritos', 'POST', '/itinerarios', { auth: 'ana', status: 201, body: { nombre: 'Ruta de favoritos', ...hotel }, tests: [guardar('itiFavs', `${D}.id`)] }),
+  req('Agregar todos mis favoritos', 'POST', '/itinerarios/{{itiFavs}}/favoritos', {
+    auth: 'ana', status: 200,
+    tests: [t('Tiene paradas', `pm.expect(${D}.paradas.length).to.be.above(0)`), eq('Ordenado por IA', `${D}.sugerido_ia`, true),
+      t('De la más cercana a la más lejana', `const d = ${D}.paradas.map((p) => Number(p.distancia_km)); pm.expect(d).to.eql([...d].sort((x, y) => x - y))`)],
+  }),
+  req('Agregar favoritos otra vez (ya están todos)', 'POST', '/itinerarios/{{itiFavs}}/favoritos', { auth: 'ana', status: 422, tests: [code('BUSINESS_RULE')] }),
+  req('Agregar favoritos a viaje ajeno', 'POST', '/itinerarios/{{itiFavs}}/favoritos', { auth: 'nuevo', status: 404, tests: [code('NOT_FOUND')] }),
+  req('DELETE viaje de favoritos', 'DELETE', '/itinerarios/{{itiFavs}}', { auth: 'ana', status: 204 }),
+  req('DELETE "Lugares visitados"', 'DELETE', '/itinerarios/{{itiVisitas}}', { auth: 'ana', status: 204 }),
   req('DELETE /itinerarios/{{idIti}}', 'DELETE', '/itinerarios/{{idIti}}', { auth: 'ana', status: 204 }),
   req('La calificación de la Plaza se recalcula', 'GET', '/atractivos/5', { status: 200, tests: [eq('Vuelve a 0', `${D}.calificacion`, 0)] }),
 ]);

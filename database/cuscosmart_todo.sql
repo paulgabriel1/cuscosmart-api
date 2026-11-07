@@ -233,6 +233,8 @@ DROP PROCEDURE IF EXISTS sp_desmarcar_visitado;
 DROP PROCEDURE IF EXISTS sp_mi_recorrido;
 DROP PROCEDURE IF EXISTS sp_eliminar_mi_resena;
 DROP PROCEDURE IF EXISTS sp_nombres_atractivos;
+DROP PROCEDURE IF EXISTS sp_marcar_lugar_visitado;
+DROP PROCEDURE IF EXISTS sp_agregar_favoritos_itinerario;
 DROP PROCEDURE IF EXISTS sp_validar_itinerario;
 DROP PROCEDURE IF EXISTS sp_crear_itinerario;
 DROP PROCEDURE IF EXISTS sp_listar_itinerarios;
@@ -1047,6 +1049,86 @@ BEGIN
      SET visitado = 1, fecha_visita = IFNULL(fecha_visita, CURRENT_TIMESTAMP(6))
    WHERE id = p_parada_id;
   CALL sp_ver_itinerario(p_usuario_id, p_itinerario_id);
+END$$
+
+-- Marca un LUGAR como visitado desde Favoritos, el Mapa o su ficha (sin abrir un viaje).
+-- Si el lugar ya es parada de algún viaje, se marca esa parada; si no, se agrega al viaje
+-- "Lugares visitados" (se crea solo, con inicio en la Plaza de Armas). Así la reseña sigue
+-- siendo verificada: siempre hay una parada visitada que la respalda.
+-- Devuelve itinerario_id y parada_id (para reseñar o desmarcar después).
+CREATE PROCEDURE sp_marcar_lugar_visitado(IN p_usuario_id INT, IN p_atractivo_id INT)
+BEGIN
+  DECLARE v_fav INT;
+  DECLARE v_iti INT;
+  DECLARE v_parada INT;
+  DECLARE v_orden INT;
+
+  CALL sp_validar_atractivo(p_atractivo_id);
+  SET v_fav = (SELECT id FROM tbl_atractivo_favorito WHERE usuario_id = p_usuario_id AND atractivo_id = p_atractivo_id);
+  -- Si ya está en algún viaje: primero una parada ya visitada, si no la más reciente
+  SET v_parada = (SELECT d.id FROM tbl_detalle_itinerario d WHERE d.atractivo_favorito_id = v_fav
+                   ORDER BY d.visitado DESC, d.id DESC LIMIT 1);
+
+  IF v_parada IS NULL THEN
+    SET v_iti = (SELECT id FROM tbl_itinerario WHERE usuario_id = p_usuario_id AND nombre = 'Lugares visitados' ORDER BY id LIMIT 1);
+    IF v_iti IS NULL THEN
+      INSERT INTO tbl_itinerario (usuario_id, nombre, latitud_inicio, longitud_inicio)
+      VALUES (p_usuario_id, 'Lugares visitados', -13.516700, -71.978800);
+      SET v_iti = LAST_INSERT_ID();
+    END IF;
+    IF v_fav IS NULL THEN
+      INSERT INTO tbl_atractivo_favorito (usuario_id, atractivo_id, es_favorito) VALUES (p_usuario_id, p_atractivo_id, 0);
+      SET v_fav = LAST_INSERT_ID();
+    END IF;
+    SET v_orden = (SELECT IFNULL(MAX(orden), 0) + 1 FROM tbl_detalle_itinerario WHERE itinerario_id = v_iti);
+    INSERT INTO tbl_detalle_itinerario (itinerario_id, atractivo_favorito_id, orden, tiempo_estimado_horas, costo_parada)
+    SELECT v_iti, v_fav, v_orden, 1.00, precio_entrada FROM tbl_atractivo WHERE id = p_atractivo_id;
+    SET v_parada = LAST_INSERT_ID();
+    UPDATE tbl_itinerario SET sugerido_ia = 0 WHERE id = v_iti;
+    CALL sp_actualizar_totales(v_iti);
+  ELSE
+    SET v_iti = (SELECT itinerario_id FROM tbl_detalle_itinerario WHERE id = v_parada);
+  END IF;
+
+  UPDATE tbl_detalle_itinerario
+     SET visitado = 1, fecha_visita = IFNULL(fecha_visita, CURRENT_TIMESTAMP(6))
+   WHERE id = v_parada;
+  SELECT v_iti AS itinerario_id, v_parada AS parada_id;
+END$$
+
+-- "Armar un viaje" con mis favoritos: agrega como paradas TODOS mis favoritos que aún no están
+-- en el viaje. Si el viaje tiene punto de inicio, la IA ordena la ruta al terminar.
+CREATE PROCEDURE sp_agregar_favoritos_itinerario(IN p_usuario_id INT, IN p_itinerario_id INT)
+BEGIN
+  DECLARE v_base INT;
+  DECLARE v_lat DECIMAL(10,6);
+
+  CALL sp_validar_itinerario(p_usuario_id, p_itinerario_id);
+  IF NOT EXISTS (SELECT 1 FROM tbl_atractivo_favorito f
+                  WHERE f.usuario_id = p_usuario_id AND f.es_favorito = 1
+                    AND NOT EXISTS (SELECT 1 FROM tbl_detalle_itinerario d
+                                     WHERE d.itinerario_id = p_itinerario_id AND d.atractivo_favorito_id = f.id)) THEN
+    SIGNAL SQLSTATE '45000' SET MESSAGE_TEXT = 'Todos tus favoritos ya están en este viaje (o no tienes favoritos)';
+  END IF;
+
+  SET v_base = (SELECT IFNULL(MAX(orden), 0) FROM tbl_detalle_itinerario WHERE itinerario_id = p_itinerario_id);
+  INSERT INTO tbl_detalle_itinerario (itinerario_id, atractivo_favorito_id, orden, tiempo_estimado_horas, costo_parada)
+  SELECT p_itinerario_id, f.id, v_base + ROW_NUMBER() OVER (ORDER BY f.fecha_guardado, f.id), 1.00, a.precio_entrada
+    FROM tbl_atractivo_favorito f
+    JOIN tbl_atractivo a ON a.id = f.atractivo_id
+   WHERE f.usuario_id = p_usuario_id AND f.es_favorito = 1
+     AND NOT EXISTS (SELECT 1 FROM tbl_detalle_itinerario d
+                      WHERE d.itinerario_id = p_itinerario_id AND d.atractivo_favorito_id = f.id);
+
+  UPDATE tbl_itinerario SET sugerido_ia = 0 WHERE id = p_itinerario_id;
+  CALL sp_actualizar_totales(p_itinerario_id);
+
+  SET v_lat = (SELECT latitud_inicio FROM tbl_itinerario WHERE id = p_itinerario_id);
+  IF v_lat IS NOT NULL THEN
+    CALL sp_ordenar_itinerario_ia(p_usuario_id, p_itinerario_id);
+  ELSE
+    CALL sp_ver_itinerario(p_usuario_id, p_itinerario_id);
+  END IF;
 END$$
 
 -- Desmarca una visita (checklist del perfil). No se permite si ya la reseñaste.

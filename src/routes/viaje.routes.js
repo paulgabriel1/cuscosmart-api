@@ -23,11 +23,13 @@ itinerarios.use(authenticate);
 itinerarios.get('/', c.listarItinerarios);
 itinerarios.get('/recorrido', c.miRecorrido); // antes de /:id
 itinerarios.post('/', validate(itinerarioSchema), c.crearItinerario);
+itinerarios.post('/visitar', validate(favoritoSchema), c.visitarLugar); // { atractivo_id }
 itinerarios.get('/:id', conId, c.verItinerario);
 itinerarios.put('/:id', conId, validate(itinerarioSchema), c.actualizarItinerario);
 itinerarios.delete('/:id', conId, c.eliminarItinerario);
 
 itinerarios.post('/:id/paradas', conId, validate(paradaSchema), c.agregarParada);
+itinerarios.post('/:id/favoritos', conId, c.agregarFavoritos);
 itinerarios.delete('/:id/paradas/:paradaId', conParada, c.quitarParada);
 itinerarios.patch('/:id/paradas/:paradaId/visitado', conParada, c.marcarVisitado);
 itinerarios.delete('/:id/paradas/:paradaId/visitado', conParada, c.desmarcarVisitado);

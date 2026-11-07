@@ -5008,6 +5008,566 @@
           }
         },
         {
+          "name": "Marcar Moray como visitado (sin viaje)",
+          "event": [
+            {
+              "listen": "test",
+              "script": {
+                "type": "text/javascript",
+                "exec": [
+                  "pm.test('Responde 200', () => pm.response.to.have.status(200));",
+                  "pm.test(\"Formato ok:true\", () => { pm.expect(pm.response.json().ok).to.eql(true); });",
+                  "pm.test(\"Guarda itiVisitas\", () => { pm.collectionVariables.set('itiVisitas', pm.response.json().data.itinerario_id); });",
+                  "pm.test(\"Guarda paradaMoray\", () => { pm.collectionVariables.set('paradaMoray', pm.response.json().data.parada_id); });"
+                ]
+              }
+            }
+          ],
+          "request": {
+            "method": "POST",
+            "header": [
+              {
+                "key": "Content-Type",
+                "value": "application/json"
+              }
+            ],
+            "url": {
+              "raw": "{{baseUrl}}/itinerarios/visitar",
+              "host": [
+                "{{baseUrl}}"
+              ],
+              "path": [
+                "itinerarios",
+                "visitar"
+              ]
+            },
+            "auth": {
+              "type": "bearer",
+              "bearer": [
+                {
+                  "key": "token",
+                  "value": "{{tokenAna}}",
+                  "type": "string"
+                }
+              ]
+            },
+            "body": {
+              "mode": "raw",
+              "raw": "{\n  \"atractivo_id\": 13\n}",
+              "options": {
+                "raw": {
+                  "language": "json"
+                }
+              }
+            }
+          }
+        },
+        {
+          "name": "Se creó \"Lugares visitados\" con Moray visitado",
+          "event": [
+            {
+              "listen": "test",
+              "script": {
+                "type": "text/javascript",
+                "exec": [
+                  "pm.test('Responde 200', () => pm.response.to.have.status(200));",
+                  "pm.test(\"Formato ok:true\", () => { pm.expect(pm.response.json().ok).to.eql(true); });",
+                  "pm.test(\"Nombre\", () => { pm.expect(pm.response.json().data.nombre).to.eql(\"Lugares visitados\"); });",
+                  "pm.test(\"Moray visitado\", () => { pm.expect(pm.response.json().data.paradas[0].visitado).to.eql(true); });",
+                  "pm.test(\"No es favorito\", () => { pm.expect(pm.response.json().data.paradas[0].es_favorito).to.eql(false); });"
+                ]
+              }
+            }
+          ],
+          "request": {
+            "method": "GET",
+            "header": [],
+            "url": {
+              "raw": "{{baseUrl}}/itinerarios/{{itiVisitas}}",
+              "host": [
+                "{{baseUrl}}"
+              ],
+              "path": [
+                "itinerarios",
+                "{{itiVisitas}}"
+              ]
+            },
+            "auth": {
+              "type": "bearer",
+              "bearer": [
+                {
+                  "key": "token",
+                  "value": "{{tokenAna}}",
+                  "type": "string"
+                }
+              ]
+            }
+          }
+        },
+        {
+          "name": "Marcar Moray otra vez (misma parada)",
+          "event": [
+            {
+              "listen": "test",
+              "script": {
+                "type": "text/javascript",
+                "exec": [
+                  "pm.test('Responde 200', () => pm.response.to.have.status(200));",
+                  "pm.test(\"Formato ok:true\", () => { pm.expect(pm.response.json().ok).to.eql(true); });",
+                  "pm.test(\"Misma parada\", () => { pm.expect(pm.response.json().data.parada_id).to.eql(Number(pm.collectionVariables.get('paradaMoray'))); });"
+                ]
+              }
+            }
+          ],
+          "request": {
+            "method": "POST",
+            "header": [
+              {
+                "key": "Content-Type",
+                "value": "application/json"
+              }
+            ],
+            "url": {
+              "raw": "{{baseUrl}}/itinerarios/visitar",
+              "host": [
+                "{{baseUrl}}"
+              ],
+              "path": [
+                "itinerarios",
+                "visitar"
+              ]
+            },
+            "auth": {
+              "type": "bearer",
+              "bearer": [
+                {
+                  "key": "token",
+                  "value": "{{tokenAna}}",
+                  "type": "string"
+                }
+              ]
+            },
+            "body": {
+              "mode": "raw",
+              "raw": "{\n  \"atractivo_id\": 13\n}",
+              "options": {
+                "raw": {
+                  "language": "json"
+                }
+              }
+            }
+          }
+        },
+        {
+          "name": "Reseñar Moray tras marcarlo visitado",
+          "event": [
+            {
+              "listen": "test",
+              "script": {
+                "type": "text/javascript",
+                "exec": [
+                  "pm.test('Responde 201', () => pm.response.to.have.status(201));",
+                  "pm.test(\"Formato ok:true\", () => { pm.expect(pm.response.json().ok).to.eql(true); });",
+                  "pm.test(\"Calificación 5\", () => { pm.expect(pm.response.json().data.nueva_calificacion).to.eql(5); });"
+                ]
+              }
+            }
+          ],
+          "request": {
+            "method": "POST",
+            "header": [
+              {
+                "key": "Content-Type",
+                "value": "application/json"
+              }
+            ],
+            "url": {
+              "raw": "{{baseUrl}}/itinerarios/{{itiVisitas}}/resenas",
+              "host": [
+                "{{baseUrl}}"
+              ],
+              "path": [
+                "itinerarios",
+                "{{itiVisitas}}",
+                "resenas"
+              ]
+            },
+            "auth": {
+              "type": "bearer",
+              "bearer": [
+                {
+                  "key": "token",
+                  "value": "{{tokenAna}}",
+                  "type": "string"
+                }
+              ]
+            },
+            "body": {
+              "mode": "raw",
+              "raw": "{\n  \"atractivo_id\": 13,\n  \"puntuacion\": 5,\n  \"comentario\": \"Los andenes circulares son increíbles\"\n}",
+              "options": {
+                "raw": {
+                  "language": "json"
+                }
+              }
+            }
+          }
+        },
+        {
+          "name": "Marcar visitado un lugar inexistente",
+          "event": [
+            {
+              "listen": "test",
+              "script": {
+                "type": "text/javascript",
+                "exec": [
+                  "pm.test('Responde 404', () => pm.response.to.have.status(404));",
+                  "pm.test(\"Formato ok:false\", () => { pm.expect(pm.response.json().ok).to.eql(false); });",
+                  "pm.test(\"Código NOT_FOUND\", () => { pm.expect(pm.response.json().error.code).to.eql(\"NOT_FOUND\"); });"
+                ]
+              }
+            }
+          ],
+          "request": {
+            "method": "POST",
+            "header": [
+              {
+                "key": "Content-Type",
+                "value": "application/json"
+              }
+            ],
+            "url": {
+              "raw": "{{baseUrl}}/itinerarios/visitar",
+              "host": [
+                "{{baseUrl}}"
+              ],
+              "path": [
+                "itinerarios",
+                "visitar"
+              ]
+            },
+            "auth": {
+              "type": "bearer",
+              "bearer": [
+                {
+                  "key": "token",
+                  "value": "{{tokenAna}}",
+                  "type": "string"
+                }
+              ]
+            },
+            "body": {
+              "mode": "raw",
+              "raw": "{\n  \"atractivo_id\": 999\n}",
+              "options": {
+                "raw": {
+                  "language": "json"
+                }
+              }
+            }
+          }
+        },
+        {
+          "name": "Marcar visitado sin token",
+          "event": [
+            {
+              "listen": "test",
+              "script": {
+                "type": "text/javascript",
+                "exec": [
+                  "pm.test('Responde 401', () => pm.response.to.have.status(401));",
+                  "pm.test(\"Formato ok:false\", () => { pm.expect(pm.response.json().ok).to.eql(false); });"
+                ]
+              }
+            }
+          ],
+          "request": {
+            "method": "POST",
+            "header": [
+              {
+                "key": "Content-Type",
+                "value": "application/json"
+              }
+            ],
+            "url": {
+              "raw": "{{baseUrl}}/itinerarios/visitar",
+              "host": [
+                "{{baseUrl}}"
+              ],
+              "path": [
+                "itinerarios",
+                "visitar"
+              ]
+            },
+            "auth": {
+              "type": "noauth"
+            },
+            "body": {
+              "mode": "raw",
+              "raw": "{\n  \"atractivo_id\": 13\n}",
+              "options": {
+                "raw": {
+                  "language": "json"
+                }
+              }
+            }
+          }
+        },
+        {
+          "name": "Nuevo viaje para mis favoritos",
+          "event": [
+            {
+              "listen": "test",
+              "script": {
+                "type": "text/javascript",
+                "exec": [
+                  "pm.test('Responde 201', () => pm.response.to.have.status(201));",
+                  "pm.test(\"Formato ok:true\", () => { pm.expect(pm.response.json().ok).to.eql(true); });",
+                  "pm.test(\"Guarda itiFavs\", () => { pm.collectionVariables.set('itiFavs', pm.response.json().data.id); });"
+                ]
+              }
+            }
+          ],
+          "request": {
+            "method": "POST",
+            "header": [
+              {
+                "key": "Content-Type",
+                "value": "application/json"
+              }
+            ],
+            "url": {
+              "raw": "{{baseUrl}}/itinerarios",
+              "host": [
+                "{{baseUrl}}"
+              ],
+              "path": [
+                "itinerarios"
+              ]
+            },
+            "auth": {
+              "type": "bearer",
+              "bearer": [
+                {
+                  "key": "token",
+                  "value": "{{tokenAna}}",
+                  "type": "string"
+                }
+              ]
+            },
+            "body": {
+              "mode": "raw",
+              "raw": "{\n  \"nombre\": \"Ruta de favoritos\",\n  \"latitud_inicio\": -13.5175,\n  \"longitud_inicio\": -71.98\n}",
+              "options": {
+                "raw": {
+                  "language": "json"
+                }
+              }
+            }
+          }
+        },
+        {
+          "name": "Agregar todos mis favoritos",
+          "event": [
+            {
+              "listen": "test",
+              "script": {
+                "type": "text/javascript",
+                "exec": [
+                  "pm.test('Responde 200', () => pm.response.to.have.status(200));",
+                  "pm.test(\"Formato ok:true\", () => { pm.expect(pm.response.json().ok).to.eql(true); });",
+                  "pm.test(\"Tiene paradas\", () => { pm.expect(pm.response.json().data.paradas.length).to.be.above(0); });",
+                  "pm.test(\"Ordenado por IA\", () => { pm.expect(pm.response.json().data.sugerido_ia).to.eql(true); });",
+                  "pm.test(\"De la más cercana a la más lejana\", () => { const d = pm.response.json().data.paradas.map((p) => Number(p.distancia_km)); pm.expect(d).to.eql([...d].sort((x, y) => x - y)); });"
+                ]
+              }
+            }
+          ],
+          "request": {
+            "method": "POST",
+            "header": [],
+            "url": {
+              "raw": "{{baseUrl}}/itinerarios/{{itiFavs}}/favoritos",
+              "host": [
+                "{{baseUrl}}"
+              ],
+              "path": [
+                "itinerarios",
+                "{{itiFavs}}",
+                "favoritos"
+              ]
+            },
+            "auth": {
+              "type": "bearer",
+              "bearer": [
+                {
+                  "key": "token",
+                  "value": "{{tokenAna}}",
+                  "type": "string"
+                }
+              ]
+            }
+          }
+        },
+        {
+          "name": "Agregar favoritos otra vez (ya están todos)",
+          "event": [
+            {
+              "listen": "test",
+              "script": {
+                "type": "text/javascript",
+                "exec": [
+                  "pm.test('Responde 422', () => pm.response.to.have.status(422));",
+                  "pm.test(\"Formato ok:false\", () => { pm.expect(pm.response.json().ok).to.eql(false); });",
+                  "pm.test(\"Código BUSINESS_RULE\", () => { pm.expect(pm.response.json().error.code).to.eql(\"BUSINESS_RULE\"); });"
+                ]
+              }
+            }
+          ],
+          "request": {
+            "method": "POST",
+            "header": [],
+            "url": {
+              "raw": "{{baseUrl}}/itinerarios/{{itiFavs}}/favoritos",
+              "host": [
+                "{{baseUrl}}"
+              ],
+              "path": [
+                "itinerarios",
+                "{{itiFavs}}",
+                "favoritos"
+              ]
+            },
+            "auth": {
+              "type": "bearer",
+              "bearer": [
+                {
+                  "key": "token",
+                  "value": "{{tokenAna}}",
+                  "type": "string"
+                }
+              ]
+            }
+          }
+        },
+        {
+          "name": "Agregar favoritos a viaje ajeno",
+          "event": [
+            {
+              "listen": "test",
+              "script": {
+                "type": "text/javascript",
+                "exec": [
+                  "pm.test('Responde 404', () => pm.response.to.have.status(404));",
+                  "pm.test(\"Formato ok:false\", () => { pm.expect(pm.response.json().ok).to.eql(false); });",
+                  "pm.test(\"Código NOT_FOUND\", () => { pm.expect(pm.response.json().error.code).to.eql(\"NOT_FOUND\"); });"
+                ]
+              }
+            }
+          ],
+          "request": {
+            "method": "POST",
+            "header": [],
+            "url": {
+              "raw": "{{baseUrl}}/itinerarios/{{itiFavs}}/favoritos",
+              "host": [
+                "{{baseUrl}}"
+              ],
+              "path": [
+                "itinerarios",
+                "{{itiFavs}}",
+                "favoritos"
+              ]
+            },
+            "auth": {
+              "type": "bearer",
+              "bearer": [
+                {
+                  "key": "token",
+                  "value": "{{tokenNuevo}}",
+                  "type": "string"
+                }
+              ]
+            }
+          }
+        },
+        {
+          "name": "DELETE viaje de favoritos",
+          "event": [
+            {
+              "listen": "test",
+              "script": {
+                "type": "text/javascript",
+                "exec": [
+                  "pm.test('Responde 204', () => pm.response.to.have.status(204));"
+                ]
+              }
+            }
+          ],
+          "request": {
+            "method": "DELETE",
+            "header": [],
+            "url": {
+              "raw": "{{baseUrl}}/itinerarios/{{itiFavs}}",
+              "host": [
+                "{{baseUrl}}"
+              ],
+              "path": [
+                "itinerarios",
+                "{{itiFavs}}"
+              ]
+            },
+            "auth": {
+              "type": "bearer",
+              "bearer": [
+                {
+                  "key": "token",
+                  "value": "{{tokenAna}}",
+                  "type": "string"
+                }
+              ]
+            }
+          }
+        },
+        {
+          "name": "DELETE \"Lugares visitados\"",
+          "event": [
+            {
+              "listen": "test",
+              "script": {
+                "type": "text/javascript",
+                "exec": [
+                  "pm.test('Responde 204', () => pm.response.to.have.status(204));"
+                ]
+              }
+            }
+          ],
+          "request": {
+            "method": "DELETE",
+            "header": [],
+            "url": {
+              "raw": "{{baseUrl}}/itinerarios/{{itiVisitas}}",
+              "host": [
+                "{{baseUrl}}"
+              ],
+              "path": [
+                "itinerarios",
+                "{{itiVisitas}}"
+              ]
+            },
+            "auth": {
+              "type": "bearer",
+              "bearer": [
+                {
+                  "key": "token",
+                  "value": "{{tokenAna}}",
+                  "type": "string"
+                }
+              ]
+            }
+          }
+        },
+        {
           "name": "DELETE /itinerarios/{{idIti}}",
           "event": [
             {
