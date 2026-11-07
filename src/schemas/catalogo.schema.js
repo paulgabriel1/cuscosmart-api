@@ -59,3 +59,9 @@ export const fotoSchema = z.object({
 
 export const horarioParams = z.object({ id, horarioId: id });
 export const fotoParams = z.object({ id, fotoId: id });
+
+// Foto desde un link: la API la descarga (puede ser el link de la imagen o de una página con foto)
+export const fotoUrlSchema = z.object({
+  url: z.string().trim().max(1000).regex(/^https?:\/\/[^\s"'<>]+$/, 'Pega un link que empiece con http:// o https://'),
+  descripcion: textoOpcional(255),
+});

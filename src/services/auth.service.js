@@ -5,6 +5,10 @@ import jwt from 'jsonwebtoken';
 import { env } from '../config/env.js';
 import { llamar, llamarUno } from '../utils/sp.js';
 import { AppError } from '../utils/AppError.js';
+import { fotoPerfil, guardarImagen, borrarFotoPerfil } from '../utils/imagenes.js';
+
+// Agrega la foto de perfil (si la subió) a los datos del usuario
+const conFoto = async (usuario) => (usuario ? { ...usuario, foto: await fotoPerfil(usuario.id) } : usuario);
 
 const RONDAS_BCRYPT = 10;
 // Hash de relleno: si el correo no existe igual comparamos, para tardar lo mismo
@@ -23,7 +27,7 @@ export async function registrar({ nombre_completo, correo, contrasena, telefono 
   const hash = await bcrypt.hash(contrasena, RONDAS_BCRYPT); // la contraseña real nunca llega a MySQL
   const { usuario_id } = await llamarUno('sp_registrar_usuario', [nombre_completo, correo, hash, telefono]);
   const usuario = await llamarUno('sp_usuario_por_id', [usuario_id]);
-  return { token: firmarToken(usuario), usuario };
+  return { token: firmarToken(usuario), usuario: await conFoto(usuario) };
 }
 
 export async function login({ correo, contrasena }) {
@@ -33,16 +37,29 @@ export async function login({ correo, contrasena }) {
   if (!encontrado || !coincide) throw new AppError(401, 'Correo o contraseña incorrectos', 'INVALID_CREDENTIALS');
 
   const { contrasena: _omitida, ...usuario } = encontrado; // nunca devolver el hash
-  return { token: firmarToken(usuario), usuario };
+  return { token: firmarToken(usuario), usuario: await conFoto(usuario) };
 }
 
 export async function perfil(usuarioId) {
   const [[usuario]] = await llamar('sp_usuario_por_id', [usuarioId]);
-  return usuario;
+  return conFoto(usuario);
+}
+
+/** Foto de perfil opcional: se guarda como uploads/perfiles/<id>.<ext> (reemplaza la anterior) */
+export async function subirFotoPerfil(usuarioId, archivo) {
+  if (!archivo) throw new AppError(400, 'Elige una imagen (JPG, PNG, WEBP o GIF)', 'NO_FILES');
+  await borrarFotoPerfil(usuarioId);
+  await guardarImagen(archivo.buffer, 'perfiles', String(usuarioId));
+  return perfil(usuarioId);
+}
+
+export async function quitarFotoPerfil(usuarioId) {
+  await borrarFotoPerfil(usuarioId);
+  return perfil(usuarioId);
 }
 
 export async function actualizarPerfil(usuarioId, { nombre_completo, telefono }) {
-  return llamarUno('sp_actualizar_perfil', [usuarioId, nombre_completo, telefono]);
+  return conFoto(await llamarUno('sp_actualizar_perfil', [usuarioId, nombre_completo, telefono]));
 }
 
 // ---------- Login con Google ----------
@@ -69,7 +86,7 @@ export async function loginGoogle({ credential }) {
   const encontrado = await llamarUno('sp_usuario_por_correo', [correo]);
   if (encontrado) {
     const { contrasena: _omitida, ...usuario } = encontrado;
-    return { token: firmarToken(usuario), usuario, nuevo: false, foto: datos.picture ?? null };
+    return { token: firmarToken(usuario), usuario: await conFoto(usuario), nuevo: false, foto: datos.picture ?? null };
   }
   // Primera vez: se registra con los datos de Google y una contraseña aleatoria
   // (la persona siempre entrará con Google; nadie conoce esa contraseña).

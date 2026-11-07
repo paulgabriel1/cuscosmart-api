@@ -17,6 +17,14 @@ export async function actualizarMe(req, res) {
   res.json({ ok: true, data: await servicio.actualizarPerfil(req.user.id, req.body) });
 }
 
+export async function subirFoto(req, res) {
+  res.json({ ok: true, data: await servicio.subirFotoPerfil(req.user.id, req.file) });
+}
+
+export async function quitarFoto(req, res) {
+  res.json({ ok: true, data: await servicio.quitarFotoPerfil(req.user.id) });
+}
+
 export async function google(req, res) {
   res.json({ ok: true, data: await servicio.loginGoogle(req.body) });
 }

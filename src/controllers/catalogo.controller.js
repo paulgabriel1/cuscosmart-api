@@ -50,6 +50,8 @@ export async function eliminarHorario(req, res) {
 
 export const listarFotos = async (req, res) => ok(res, await s.listarFotos(param(req).id));
 export const agregarFoto = async (req, res) => ok(res, await s.agregarFoto(param(req).id, req.body), 201);
+export const subirFotos = async (req, res) => ok(res, await s.subirFotos(param(req).id, req.files, req.body?.descripcion?.slice(0, 255)), 201);
+export const fotoDesdeUrl = async (req, res) => ok(res, await s.fotoDesdeUrl(param(req).id, req.body), 201);
 export async function eliminarFoto(req, res) {
   const { id, fotoId } = param(req);
   await s.eliminarFoto(id, fotoId);

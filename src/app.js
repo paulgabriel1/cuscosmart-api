@@ -8,6 +8,7 @@ import routes from './routes/index.js';
 import { openapi } from './docs/openapi.js';
 import { notFound, errorHandler } from './middlewares/errorHandler.js';
 import { limiteGeneral } from './middlewares/limitadores.js';
+import { CARPETA_SUBIDAS } from './utils/imagenes.js';
 
 const app = express();
 
@@ -21,6 +22,13 @@ if (!env.produccion) {
     swaggerOptions: { persistAuthorization: true },
   }));
 }
+
+// Imágenes subidas (fotos de atractivos y de perfil). "cross-origin" deja que la web
+// (localhost:5173) las muestre; nosniff impide que el navegador las trate como otra cosa.
+app.use('/uploads', (req, res, next) => {
+  res.set({ 'Cross-Origin-Resource-Policy': 'cross-origin', 'X-Content-Type-Options': 'nosniff' });
+  next();
+}, express.static(CARPETA_SUBIDAS, { maxAge: '7d', dotfiles: 'deny', index: false }));
 
 app.use(helmet());                              // cabeceras de seguridad HTTP
 app.use(cors({ origin: env.corsOrigin }));      // solo el front autorizado puede llamar a la API

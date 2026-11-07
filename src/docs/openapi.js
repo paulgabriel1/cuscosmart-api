@@ -30,6 +30,14 @@ function crudCatalogo(tag, schema, ejemplo) {
   };
 }
 
+const archivos = (campo, varios, extra = {}) => ({
+  required: true,
+  content: { 'multipart/form-data': { schema: { type: 'object', required: [campo], properties: {
+    [campo]: varios ? { type: 'array', items: { type: 'string', format: 'binary' } } : { type: 'string', format: 'binary' },
+    ...extra,
+  } } } },
+});
+
 const paths = {
   '/health': { get: { tags: ['Sistema'], summary: 'Estado de la API y de la base de datos', ...publico, responses: ok('API y base arriba') } },
 
@@ -57,6 +65,10 @@ const paths = {
     },
   },
   '/auth/config': { get: { tags: ['Autenticación'], summary: 'Configuración pública (ID de cliente de Google)', ...publico, responses: ok('Configuración') } },
+  '/auth/me/foto': {
+    put: { tags: ['Autenticación'], summary: 'Subir mi foto de perfil (opcional, 5 MB)', description: 'Campo `foto` (multipart). Reemplaza la anterior.', requestBody: archivos('foto', false), responses: { ...ok('Perfil con foto'), ...resp(400, 401) } },
+    delete: { tags: ['Autenticación'], summary: 'Quitar mi foto de perfil', responses: { ...ok('Perfil sin foto'), ...resp(401) } },
+  },
   '/auth/me': {
     get: { tags: ['Autenticación'], summary: 'Mi perfil (con totales de favoritos, viajes y reseñas)', responses: { ...ok('Usuario del token'), ...resp(401) } },
     put: {
@@ -109,6 +121,24 @@ const paths = {
     parameters: [pid()],
     get: { tags: ['Atractivos'], summary: 'Fotos', ...publico, responses: { ...ok('Lista'), ...resp(404) } },
     post: { tags: ['Atractivos'], summary: 'Agregar foto', description: ADMIN, requestBody: cuerpo('Foto', { url_foto: 'img/moray.jpg', descripcion: 'Andenes circulares' }), responses: { ...ok('Creada', 201), ...resp(400, 401, 403, 404) } },
+  },
+  '/atractivos/{id}/fotos/subir': {
+    parameters: [pid()],
+    post: {
+      tags: ['Atractivos'], summary: 'Subir fotos desde la PC (hasta 5, 5 MB c/u)',
+      description: `${ADMIN} Campo \`fotos\` (multipart). Se revisa que cada archivo sea JPG, PNG, WEBP o GIF de verdad y se guarda en \`uploads/fotos\`.`,
+      requestBody: archivos('fotos', true, { descripcion: { type: 'string', maxLength: 255 } }),
+      responses: { ...ok('Fotos creadas', 201), ...resp(400, 401, 403, 404) },
+    },
+  },
+  '/atractivos/{id}/fotos/url': {
+    parameters: [pid()],
+    post: {
+      tags: ['Atractivos'], summary: 'Agregar foto desde un link de internet',
+      description: `${ADMIN} La API descarga la imagen y la guarda. Si el link es una página, usa su foto principal (og:image). Bloquea links a redes privadas.`,
+      requestBody: cuerpo('FotoUrl', { url: 'https://www.cuscoperu.com/es/tours/cusco/caminatas/montana-colores-7-lagunas/', descripcion: 'Montaña de colores' }),
+      responses: { ...ok('Foto creada', 201), ...resp(400, 401, 403, 404) },
+    },
   },
   '/atractivos/{id}/fotos/{fotoId}': {
     parameters: [pid(), pid('fotoId')],
@@ -239,6 +269,7 @@ const schemas = {
   OkPaginado: obj({ ok: { type: 'boolean' }, data: { type: 'array', items: { type: 'object' } }, meta: obj({ page: ent(), limit: ent(), total: { type: 'integer' }, totalPages: { type: 'integer' } }) }),
   Error: obj({ ok: { type: 'boolean', example: false }, error: obj({ code: txt(), message: txt(), details: { type: 'array', items: obj({ campo: txt(), mensaje: txt() }) } }) }),
   Registro: obj({ nombre_completo: txt({ minLength: 3, maxLength: 150 }), correo: txt({ format: 'email' }), contrasena: txt({ minLength: 8, maxLength: 72, description: 'Con letras y números' }), telefono: txt({ maxLength: 20 }) }, ['nombre_completo', 'correo', 'contrasena']),
+  FotoUrl: obj({ url: txt({ format: 'uri', maxLength: 1000 }), descripcion: txt({ maxLength: 255, nullable: true }) }, ['url']),
   Login: obj({ correo: txt({ format: 'email' }), contrasena: txt() }, ['correo', 'contrasena']),
   Google: obj({ credential: txt({ description: 'ID token que entrega el botón de Google' }) }, ['credential']),
   Perfil: obj({ nombre_completo: txt({ minLength: 3, maxLength: 150 }), telefono: txt({ maxLength: 20, nullable: true }) }, ['nombre_completo']),

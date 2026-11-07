@@ -5,8 +5,9 @@ import { validate } from '../middlewares/validate.js';
 import { idParam } from '../schemas/comunes.js';
 import {
   categoriaSchema, zonaSchema, atractivoSchema, listarAtractivosQuery, cercanosQuery,
-  horarioSchema, fotoSchema, horarioParams, fotoParams,
+  horarioSchema, fotoSchema, horarioParams, fotoParams, fotoUrlSchema,
 } from '../schemas/catalogo.schema.js';
+import { subirFotos } from '../middlewares/subidas.js';
 import * as c from '../controllers/catalogo.controller.js';
 
 const soloAdmin = [authenticate, authorize('ADMIN')];
@@ -43,4 +44,6 @@ atractivos.delete('/:id/horarios/:horarioId', soloAdmin, validate(horarioParams,
 
 atractivos.get('/:id/fotos', conId, c.listarFotos);
 atractivos.post('/:id/fotos', soloAdmin, conId, validate(fotoSchema), c.agregarFoto);
+atractivos.post('/:id/fotos/subir', soloAdmin, conId, subirFotos, c.subirFotos);          // archivos desde la PC (campo "fotos")
+atractivos.post('/:id/fotos/url', soloAdmin, conId, validate(fotoUrlSchema), c.fotoDesdeUrl); // la API descarga el link
 atractivos.delete('/:id/fotos/:fotoId', soloAdmin, validate(fotoParams, 'params'), c.eliminarFoto);

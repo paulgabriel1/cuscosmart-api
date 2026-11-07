@@ -1,6 +1,8 @@
 // Catálogo: categorías, zonas, atractivos, horarios y fotos.
 // Cada función solo llama a un procedimiento almacenado (la lógica está en MySQL).
 import { llamar, llamarUno } from '../utils/sp.js';
+import { AppError } from '../utils/AppError.js';
+import { guardarImagen, borrarSubida, descargarImagen } from '../utils/imagenes.js';
 
 // ---------- Categorías ----------
 export const listarCategorias = async () => (await llamar('sp_listar_categorias'))[0];
@@ -99,4 +101,36 @@ export const eliminarHorario = (id, horarioId) => llamar('sp_eliminar_horario', 
 
 export const listarFotos = async (id) => (await llamar('sp_listar_fotos', [id]))[0];
 export const agregarFoto = (id, { url_foto, descripcion }) => llamarUno('sp_agregar_foto', [id, url_foto, descripcion]);
-export const eliminarFoto = (id, fotoId) => llamar('sp_eliminar_foto', [id, fotoId]);
+// Al borrar la foto también se borra el archivo si fue subido a la API (uploads/)
+export async function eliminarFoto(id, fotoId) {
+  const foto = (await listarFotos(id)).find((f) => f.id === fotoId);
+  await llamar('sp_eliminar_foto', [id, fotoId]);
+  await borrarSubida(foto?.url_foto);
+}
+
+/** Guarda la imagen en uploads/fotos y la registra; si el SP falla, borra el archivo */
+async function registrarImagen(id, buf, descripcion) {
+  const ruta = await guardarImagen(buf, 'fotos');
+  try {
+    return await llamarUno('sp_agregar_foto', [id, ruta, descripcion ?? null]);
+  } catch (e) {
+    await borrarSubida(ruta);
+    throw e;
+  }
+}
+
+/** Fotos subidas desde la PC (varias a la vez) */
+export async function subirFotos(id, archivos, descripcion) {
+  if (!archivos?.length) throw new AppError(400, 'Elige al menos una imagen (JPG, PNG, WEBP o GIF)', 'NO_FILES');
+  await verAtractivo(id); // 404 si no existe, antes de guardar archivos
+  const guardadas = [];
+  for (const a of archivos) guardadas.push(await registrarImagen(id, a.buffer, descripcion || null));
+  return guardadas;
+}
+
+/** Foto desde un link de internet: la API la descarga y la guarda (así no se rompe si el sitio la borra) */
+export async function fotoDesdeUrl(id, { url, descripcion }) {
+  await verAtractivo(id);
+  const buf = await descargarImagen(url);
+  return registrarImagen(id, buf, descripcion);
+}
