@@ -9,6 +9,7 @@ Guía turística del Cusco: atractivos con mapa, favoritos, **viajes ordenados p
 | Documento | Para qué |
 | --- | --- |
 | [docs/INSTALACION.md](docs/INSTALACION.md) | Instalar y correr todo **desde cero**, paso a paso |
+| [docs/Guia-practica-CuscoSmart.pdf](docs/Guia-practica-CuscoSmart.pdf) | **Guía práctica en PDF** (API y front) con evidencias de cada función |
 | [docs/diagrama-er.md](docs/diagrama-er.md) | Diagrama entidad-relación y reglas de la base |
 | [docs/guia/](docs/guia/README.md) | Cómo se construyó, fase por fase (con preguntas del profesor) |
 | <http://localhost:3000/api/v1/docs> | Swagger: probar cada endpoint (con la API prendida) |
