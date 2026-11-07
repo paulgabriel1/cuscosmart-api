@@ -1,16 +1,8 @@
-import * as s from '../services/viaje.service.js';
+import * as s from '../services/itinerarios.service.js';
 
 const ok = (res, data, status = 200) => res.status(status).json({ ok: true, data });
 const yo = (req) => req.user.id;               // dueño: siempre desde el token
 const p = (req) => req.validado.params;        // { id, paradaId } ya validados
-
-// ---------- Favoritos ----------
-export const listarFavoritos = async (req, res) => ok(res, await s.listarFavoritos(yo(req)));
-export const agregarFavorito = async (req, res) => ok(res, await s.agregarFavorito(yo(req), req.body.atractivo_id), 201);
-export async function quitarFavorito(req, res) {
-  await s.quitarFavorito(yo(req), p(req).id);
-  res.status(204).end();
-}
 
 // ---------- Itinerarios ----------
 export const listarItinerarios = async (req, res) => ok(res, await s.listarItinerarios(yo(req)));
@@ -31,10 +23,3 @@ export const desmarcarVisitado = async (req, res) => ok(res, await s.desmarcarVi
 export const miRecorrido = async (req, res) => ok(res, await s.miRecorrido(yo(req)));
 export const visitarLugar = async (req, res) => ok(res, await s.visitarLugar(yo(req), req.body.atractivo_id));
 export const agregarFavoritos = async (req, res) => ok(res, await s.agregarFavoritos(yo(req), p(req).id));
-
-// ---------- Reseñas ----------
-export const registrarResena = async (req, res) => ok(res, await s.registrarResena(yo(req), p(req).id, req.body), 201);
-export async function eliminarMiResena(req, res) {
-  await s.eliminarMiResena(yo(req), p(req).id);
-  res.status(204).end();
-}

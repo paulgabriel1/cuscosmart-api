@@ -61,11 +61,13 @@ database/
 ├── migracion.sql     # cambios para bases antiguas (npm run db:migrar)
 └── cuscosmart_todo.sql   # todo junto (lo genera db:reset; sirve para phpMyAdmin)
 src/
-├── routes/           # URL → middlewares → controlador
+├── routes/           # URL → middlewares → controlador (index.js monta cada recurso)
 ├── middlewares/      # auth (token y rol) · validate (zod) · limitadores · subidas · errorHandler
 ├── schemas/          # reglas de formato de cada dato (zod)
 ├── controllers/      # arman la respuesta HTTP
 ├── services/         # llaman a los procedimientos
+│   (en las 4 carpetas: un archivo por recurso → auth, categorias, zonas, atractivos,
+│    favoritos, itinerarios, resenas, preguntas, asistente, usuarios; ej. atractivos.routes.js)
 ├── utils/            # sp.js (única puerta a MySQL) · imagenes.js · AppError
 ├── config/           # env.js (valida el .env) · db.js (conexión)
 └── docs/openapi.js   # Swagger
@@ -128,7 +130,7 @@ Cada regla dice **dónde vive**, porque ahí es donde se cambia.
 | RN-11 | Ordenar con IA exige punto de inicio; ordena por distancia (Haversine) | `sp_ordenar_itinerario_ia`, `fn_distancia_km` |
 | RN-12 | Solo se reseña un lugar **visitado** (anti reseñas falsas), con puntuación de 1 a 5 | trigger `trg_resena_valida`, `sp_registrar_resena`, `CHECK` |
 | RN-13 | La calificación es el promedio de reseñas y se recalcula sola | triggers `trg_resena_calificacion_*` |
-| RN-14 | El ADMIN no puede quitarse su rol ni borrar su cuenta; el rol se revisa en cada petición | `admin.service.js`, `authenticate` |
+| RN-14 | El ADMIN no puede quitarse su rol ni borrar su cuenta; el rol se revisa en cada petición | `usuarios.service.js`, `authenticate` |
 | RN-15 | Límites: 300 peticiones por minuto; 10 logins fallidos por correo cada 15 min; 20 preguntas al asistente por minuto | `limitadores.js` |
 | RN-16 | Las fotos subidas deben ser imágenes reales (JPG, PNG, WEBP o GIF) de hasta 5 MB | `utils/imagenes.js`, `subidas.js` |
 

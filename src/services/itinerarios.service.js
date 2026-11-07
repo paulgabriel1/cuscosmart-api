@@ -1,18 +1,7 @@
-// Favoritos, itinerarios y reseñas del turista.
+// Itinerarios (viajes) del turista, con sus paradas.
 // El usuarioId SIEMPRE sale del token (req.user.id), nunca del cuerpo de la petición:
 // así nadie puede crear o leer cosas a nombre de otro. Los procedimientos lo vuelven a validar.
 import { llamar, llamarUno } from '../utils/sp.js';
-
-// ---------- Favoritos ----------
-export const listarFavoritos = async (usuarioId) => (await llamar('sp_listar_favoritos', [usuarioId]))[0];
-
-export async function agregarFavorito(usuarioId, atractivoId) {
-  const { favorito_id } = await llamarUno('sp_agregar_favorito', [usuarioId, atractivoId]);
-  const favoritos = await listarFavoritos(usuarioId);
-  return favoritos.find((f) => f.favorito_id === favorito_id);
-}
-
-export const quitarFavorito = (usuarioId, favoritoId) => llamar('sp_quitar_favorito', [usuarioId, favoritoId]);
 
 // ---------- Itinerarios ----------
 export const listarItinerarios = async (usuarioId) => (await llamar('sp_listar_itinerarios', [usuarioId]))[0];
@@ -66,9 +55,3 @@ export const ordenarConIA = async (usuarioId, id) => armar(await llamar('sp_orde
 
 export const marcarVisitado = async (usuarioId, id, paradaId) =>
   armar(await llamar('sp_marcar_visitado', [usuarioId, id, paradaId]));
-
-// ---------- Reseñas ----------
-export const registrarResena = (usuarioId, id, { atractivo_id, puntuacion, comentario }) =>
-  llamarUno('sp_registrar_resena', [usuarioId, id, atractivo_id, puntuacion, comentario]);
-
-export const eliminarMiResena = (usuarioId, resenaId) => llamar('sp_eliminar_mi_resena', [usuarioId, resenaId]);

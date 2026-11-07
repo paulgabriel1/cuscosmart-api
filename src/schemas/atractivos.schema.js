@@ -3,16 +3,6 @@ import { id, paginacion, latitud, longitud, textoOpcional, busqueda } from './co
 
 const HORA = /^([01]\d|2[0-3]):[0-5]\d(:[0-5]\d)?$/; // 08:30 o 08:30:00
 
-export const categoriaSchema = z.object({
-  nombre: z.string().trim().min(2, 'Mínimo 2 caracteres').max(100),
-  descripcion: textoOpcional(255),
-});
-
-export const zonaSchema = z.object({
-  nombre: z.string().trim().min(2, 'Mínimo 2 caracteres').max(100),
-  ciudad: textoOpcional(100),
-});
-
 // latitud y longitud van juntas: o las dos, o ninguna
 export const atractivoSchema = z
   .object({

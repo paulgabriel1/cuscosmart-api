@@ -1,8 +1,6 @@
-// Favoritos, itinerarios, paradas y reseñas (todo lo del turista)
+// Itinerarios (viajes) y sus paradas
 import { z } from 'zod';
-import { id, latitud, longitud, textoOpcional } from './comunes.js';
-
-export const favoritoSchema = z.object({ atractivo_id: id });
+import { id, latitud, longitud } from './comunes.js';
 
 // El punto de inicio (ej. el hotel) es opcional, pero latitud y longitud van juntas
 export const itinerarioSchema = z
@@ -27,11 +25,5 @@ export const paradaSchema = z
     message: 'Envía favorito_id o atractivo_id (solo uno)',
     path: ['atractivo_id'],
   });
-
-export const resenaSchema = z.object({
-  atractivo_id: id,
-  puntuacion: z.coerce.number().int().min(1, 'Mínimo 1').max(5, 'Máximo 5'),
-  comentario: textoOpcional(500),
-});
 
 export const paradaParams = z.object({ id, paradaId: id });
