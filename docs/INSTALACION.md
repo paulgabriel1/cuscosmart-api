@@ -356,3 +356,43 @@ npm run test:api
 **En Postman:** **Import** → elige `postman/cuscosmart.collection.json` → clic derecho en la colección → **Run collection** → **Run**. Deja **No Environment**.
 
 > Las pruebas modifican la base. Antes de la presentación vuelve a ejecutar `npm run db:reset` para dejar los datos limpios.
+
+---
+
+## 12. Probar desde el celular
+
+La web ya está preparada: el celular solo abre la web y ella le pasa los pedidos a la API por dentro (proxy de Vite). **La API y la web deben estar prendidas en la PC** (pasos 5 y 6).
+
+### Opción A — Mismo Wi-Fi (rápida)
+1. La PC y el celular deben estar en el **mismo Wi-Fi**.
+2. Averigua la IP de la PC en PowerShell:
+   ```powershell
+   ipconfig
+   ```
+   Busca **"Adaptador de LAN inalámbrica Wi-Fi" → Dirección IPv4**, por ejemplo `192.168.100.4`.
+   (También la ves cuando haces `npm run dev` en la web, en la línea `➜  Network: http://192.168.x.x:5173/`.)
+3. En el navegador del celular abre: **`http://192.168.100.4:5173`** (con tu IP).
+4. Si Windows pregunta si permites el acceso a **Node.js**, marca **Redes privadas y públicas** → **Permitir**.
+
+> Con la opción A todo funciona **menos "Usar mi ubicación"**: los celulares solo dan el GPS a páginas con **https://**. Para el GPS usa la opción B.
+
+### Opción B — Con HTTPS (funciona el GPS y desde cualquier red, incluso con datos móviles)
+1. Con la API y la web prendidas, abre una **tercera** ventana de PowerShell:
+   ```powershell
+   cd $HOME\Desktop\cuscosmart-web
+   npm run celular
+   ```
+2. La primera vez descarga la herramienta (1 minuto). Luego aparece un recuadro con un link como:
+   ```
+   https://palabras-al-azar.trycloudflare.com
+   ```
+3. Abre **ese link** en el celular. Cuando pregunte por la ubicación → **Permitir**.
+4. Para cerrarlo: **Ctrl + C** en esa ventana. El link deja de funcionar y cada vez sale uno nuevo.
+
+> ⚠️ El link de la opción B es **público** mientras esté abierto: cualquiera que lo tenga puede ver la web. Ciérralo al terminar de probar.
+
+| Problema en el celular | Solución |
+| --- | --- |
+| No carga `http://IP:5173` | Mismo Wi-Fi en los dos; revisa la IP con `ipconfig`; permite Node.js en el Firewall; algunos Wi-Fi públicos (como el de un instituto) bloquean conexiones entre equipos: usa la opción B |
+| Carga pero dice "No se pudo conectar con la API" | La API (paso 5) está apagada en la PC |
+| "Usar mi ubicación" no hace nada | Abriste por `http://`: usa la opción B (https) y acepta el permiso |
