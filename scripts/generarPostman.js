@@ -3,7 +3,9 @@
 // Requisito antes de correrla: npm run db:reset y reiniciar la API (la colección cambia datos y prueba el 429).
 import fs from 'node:fs';
 
-const TOKENS = { admin: '{{tokenAdmin}}', ana: '{{tokenAna}}', nuevo: '{{tokenNuevo}}', malo: 'token.invalido.123' };
+const TOKENS = { admin: '{{tokenAdmin}}', ana: '{{tokenAna}}', nuevo: '{{tokenNuevo}}', malo: '{{tokenFalso}}' };
+// El token falso se arma en el pre-request de la colección: si estuviera escrito en la autenticación,
+// Postman lo confunde con una contraseña real ("Unlock your vault") y el import falla.
 
 // ---------- Ayudantes para escribir pruebas cortas ----------
 const D = 'pm.response.json().data';
@@ -381,6 +383,7 @@ const preColeccion = [
   "if (!pm.collectionVariables.get('correoNuevo')) {",
   "  pm.collectionVariables.set('correoNuevo', 'luis' + Date.now() + '@mail.com');",
   '}',
+  "pm.collectionVariables.set('tokenFalso', ['token', 'invalido', 'de', 'prueba'].join('.'));",
 ];
 
 const coleccion = {
@@ -392,7 +395,7 @@ const coleccion = {
   event: [{ listen: 'prerequest', script: { type: 'text/javascript', exec: preColeccion } }],
   variable: [
     { key: 'baseUrl', value: 'http://localhost:3000/api/v1' },
-    ...['tokenAdmin', 'tokenAna', 'tokenNuevo', 'correoNuevo', 'idNuevo', 'idCategoria', 'idZona', 'idAtractivo', 'idHorario', 'idFoto',
+    ...['tokenAdmin', 'tokenAna', 'tokenNuevo', 'tokenFalso', 'correoNuevo', 'idNuevo', 'idCategoria', 'idZona', 'idAtractivo', 'idHorario', 'idFoto',
       'favPlaza', 'favQenqo', 'favNuevo', 'idIti', 'idItiNuevo', 'paradaPlaza', 'paradaQenqo', 'paradaCatedral', 'idPregunta'].map((key) => ({ key, value: '' })),
   ],
   item: [auth, catalogo, favoritos, itinerarios, asistente, admin, seguridad],
