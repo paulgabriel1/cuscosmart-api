@@ -137,6 +137,21 @@ const paths = {
   '/itinerarios/recorrido': {
     get: { tags: ['Itinerarios'], summary: 'Mi recorrido (checklist del perfil)', description: `${TOKEN} Todas las paradas de todos tus viajes: primero las visitadas (con fecha_visita, de la más reciente a la más antigua) y luego las pendientes.`, responses: { ...ok('Lista de paradas'), ...resp(401) } },
   },
+  '/itinerarios/visitar': {
+    post: {
+      tags: ['Itinerarios'], summary: 'Marcar un lugar como visitado (sin abrir un viaje)',
+      description: `${TOKEN} Si el lugar ya es parada de un viaje, marca esa parada; si no, lo agrega al viaje "Lugares visitados" (se crea solo). Devuelve itinerario_id y parada_id para reseñar después.`,
+      requestBody: cuerpo('FavoritoInput', { atractivo_id: 5 }), responses: { ...ok('{ itinerario_id, parada_id }'), ...resp(400, 401, 404) },
+    },
+  },
+  '/itinerarios/{id}/favoritos': {
+    parameters: [pid()],
+    post: {
+      tags: ['Itinerarios'], summary: 'Armar el viaje con mis favoritos',
+      description: `${TOKEN} Agrega como paradas todos tus favoritos que aún no están. Si el viaje tiene punto de inicio, la IA ordena la ruta. 422 si no hay favoritos nuevos.`,
+      responses: { ...ok('Itinerario con las paradas'), ...resp(401, 404, 422) },
+    },
+  },
   '/itinerarios/{id}': {
     parameters: [pid()],
     get: { tags: ['Itinerarios'], summary: 'Ver con paradas en orden', description: `${TOKEN} 404 si no es tuyo.`, responses: { ...ok('Itinerario'), ...resp(401, 404) } },

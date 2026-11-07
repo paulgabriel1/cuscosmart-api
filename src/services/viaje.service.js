@@ -50,6 +50,12 @@ export const agregarParada = async (usuarioId, id, { favorito_id, atractivo_id, 
     ? llamar('sp_agregar_parada', [usuarioId, id, favorito_id, tiempo_estimado_horas ?? null])
     : llamar('sp_agregar_parada_lugar', [usuarioId, id, atractivo_id, tiempo_estimado_horas ?? null])));
 
+// Marca un lugar como visitado sin abrir un viaje (desde Favoritos, Mapa o la ficha del lugar)
+export const visitarLugar = (usuarioId, atractivoId) => llamarUno('sp_marcar_lugar_visitado', [usuarioId, atractivoId]);
+
+// "Armar un viaje": agrega todos mis favoritos como paradas (y ordena con IA si hay punto de inicio)
+export const agregarFavoritos = async (usuarioId, id) => armar(await llamar('sp_agregar_favoritos_itinerario', [usuarioId, id]));
+
 export const desmarcarVisitado = async (usuarioId, id, paradaId) =>
   armar(await llamar('sp_desmarcar_visitado', [usuarioId, id, paradaId]));
 
